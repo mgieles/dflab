@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division
 import scipy,numpy
 from scipy.interpolate import  PiecewisePolynomial
@@ -15,9 +16,8 @@ from matplotlib.pyplot import rc,axes
 class limepy:
     def __init__(self, W0, n,**kwargs):
         """ 
-        ************************* MM, (A)limepy *******************************
-        * (Multi-Mass Anisotropy) Lowered Isothermal Model Explorer in Python *
-        ***********************************************************************
+        (MM), (A)limepy
+        (Multi-Mass) (Anisotropy) Lowered Isothermal Model Explorer in Python 
 
         Class to solve lowered isothermal models
 
@@ -62,16 +62,16 @@ class limepy:
 
         Construct a King model with W0 = 7 and print rt/r0 and rv/rh
         
-        >>> k = alime(7, 2)
+        >>> k = limepy(7, 2)
         >>> print k.rt/k.r0, k.rv/k.rh
         
         Create a Wilson model with W0 = 12 in Henon/N-body units: G=M=-4E=1
         
-        >>> w = alime(12, 3, scale=True, GS=1, MS=1, RS=1, scale_radius='rv')
+        >>> w = limepy(12, 3, scale=True, GS=1, MS=1, RS=1, scale_radius='rv')
         
         Multi-mass king model in physical units with rh = 1 pc and M = 1e5 Msun
         
-        >>> m = alime(7, 2, mj=[0.3,1,5], Mj=[9,3,1], scale=True, MS=1e5, RS=1)
+        >>> m = limepy(7, 2, mj=[0.3,1,5], Mj=[9,3,1], scale=True, MS=1e5, RS=1)
                         
 
         Description of the distribution function
@@ -92,17 +92,19 @@ class limepy:
 
         The anisotropic models are 
 
-          f(E, J2, n) = exp(-J2)*f(E, n),
+        .. math::
+          f(E, J^2, n) = \exp(-J^2)f(E, n),
 
         where J^2 = (r*vt)^2/(2*ra2*sig2), here ra is the anisotropy radius
 
         Multi-mass models are found by summing the DFs of individual mass 
         components and adopting for each component
 
-          sigj ~ muj^{-delta} 
-          raj ~ muj^{eta}
+        .. math::
+        \sigma_j \propto \mu_j^{-delta},\\
+        r_{{\rm a},j} \propto \mu_j^{eta}
 
-        where muj = mj/mmean and mmean is the central density weighted mean mj
+        where :math:`\mu_j = m_j/m` and :math:`m` is the central density weighted mean mj
 
         """
 
@@ -451,17 +453,6 @@ class limepy:
         phi_and_derivs = numpy.vstack([[self.phi],[self.dp1]]).T
         self._phi_poly =PiecewisePolynomial(self.r,phi_and_derivs,direction=1)
 
-    def interp_phi(self, r):
-        """ Interpolate potential at r, works on scalar and arrays """
-
-        if not hasattr(r,"__len__"): r = numpy.array([r])
-        if (not self._interpolator_set): self._setup_phi_interpolator()
-
-        phi = numpy.zeros([r.size])
-        inrt = (r<self.rt)
-        # Use 3th order polynomials to interp, using phi' 
-        if (sum(inrt)>0): phi[inrt] = self._phi_poly(r[inrt])
-        return phi
 
     def _scale(self):
         """
@@ -512,6 +503,18 @@ class limepy:
     def tonp(self, q):
         q = numpy.array([q]) if not hasattr(q,"__len__") else numpy.array(q)
         return q
+
+    def interp_phi(self, r):
+        """ Interpolate potential at r, works on scalar and arrays """
+
+        if not hasattr(r,"__len__"): r = numpy.array([r])
+        if (not self._interpolator_set): self._setup_phi_interpolator()
+
+        phi = numpy.zeros([r.size])
+        inrt = (r<self.rt)
+        # Use 3th order polynomials to interp, using phi' 
+        if (sum(inrt)>0): phi[inrt] = self._phi_poly(r[inrt])
+        return phi
 
     def df(self, *arg):
         """
