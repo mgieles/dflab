@@ -17,7 +17,12 @@ import sys
 import os
 
 ## Make ReadTheDocs think scipy and numpy are installed
-from unittest.mock import MagicMock
+
+if sys.version_info[0] == 3 and sys.version_info[1] >= 3:
+    # Batteries included in Python >= 3.3
+    from unittest.mock import MagicMock
+else:
+    from mock import Mock as MagicMock
 
 class Mock(MagicMock):
     @classmethod
