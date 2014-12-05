@@ -1,23 +1,20 @@
 # -*- coding: utf-8 -*-
-from __future__ import division
-import scipy,numpy
-from scipy.interpolate import  PiecewisePolynomial
-from pylab import exp, sqrt, log10, pi, sin, cos, log
-from scipy.special import erf, gamma, gammainc, dawsn
-from scipy.integrate import ode, dblquad
-from scipy.misc import factorial2
-from scipy import random
+from __future__ import division, absolute_import
+
+import numpy
+from numpy import exp, sqrt, pi, sin
+from scipy.interpolate import PiecewisePolynomial
+from scipy.special import gamma, gammainc, dawsn
+from scipy.integrate import ode
 from math import factorial
-import matplotlib.pylab as plt
-from matplotlib.pyplot import rc,axes
 
 #     Authors: Mark Gieles, Alice Zocchi (Surrey 2014)
 
 class limepy:
     def __init__(self, W0, n,**kwargs):
-        """ 
+        """
         (MM), (A)limepy
-        (Multi-Mass) (Anisotropy) Lowered Isothermal Model Explorer in Python 
+        (Multi-Mass) (Anisotropy) Lowered Isothermal Model Explorer in Python
 
         Class to solve lowered isothermal models
 
@@ -27,7 +24,7 @@ class limepy:
 
         Parameters
         ----------
-        W0 : scalar 
+        W0 : scalar
            Central dimensionless potential
         n : int
           Order of truncation [1=Woolley, 2=King, 3=Wilson]; default=2
@@ -43,9 +40,9 @@ class limepy:
            Final scaled mass; default=10^5 [Msun]
         RS : scalar, optional
            Final scaled mass; default=3 [pc]
-        GS : scalar, optional 
+        GS : scalar, optional
            Final scaled mass; default=0.004302 [(km/s)^2 pc/Msun]
-        scale_radius : str, optional 
+        scale_radius : str, optional
                      Radius to scale ['rv' or 'rh']; default='rh'
         scale : bool, optional
               Scale model to desired G=GS, M=MS, R=RS; default=False
@@ -61,18 +58,18 @@ class limepy:
         --------
 
         Construct a King model with W0 = 7 and print rt/r0 and rv/rh
-        
+
         >>> k = limepy(7, 2)
         >>> print k.rt/k.r0, k.rv/k.rh
-        
+
         Create a Wilson model with W0 = 12 in Henon/N-body units: G=M=-4E=1
-        
+
         >>> w = limepy(12, 3, scale=True, GS=1, MS=1, RS=1, scale_radius='rv')
-        
+
         Multi-mass king model in physical units with rh = 1 pc and M = 1e5 Msun
-        
+
         >>> m = limepy(7, 2, mj=[0.3,1,5], Mj=[9,3,1], scale=True, MS=1e5, RS=1)
-                        
+
 
         Description of the distribution function
         ----------------------------------------
@@ -80,24 +77,24 @@ class limepy:
         The isotropic distribution functions are defined as
 
                      / Aexp(-E)                                 , n=1
-          f(E, n) = < 
+          f(E, n) = <
                      \ A[exp(-E) - Sum_{m=0}^{n-2} (-E)^m/!m ]  , n>1
 
-        where E = (v2/2 - phi + phi(r_t))/sig2, sig is a velocity scale and 
+        where E = (v2/2 - phi + phi(r_t))/sig2, sig is a velocity scale and
               0<phi<W0/sig2
 
           n = 1 : Woolley 1954, MNRAS, 114, 191
           n = 2 : King 1966, AJ, 72, 64
           n = 3 : Wilson 1975, AJ, 80, 175
 
-        The anisotropic models are 
+        The anisotropic models are
 
         .. math::
           f(E, J^2, n) = \exp(-J^2)f(E, n),
 
         where J^2 = (r*vt)^2/(2*ra2*sig2), here ra is the anisotropy radius
 
-        Multi-mass models are found by summing the DFs of individual mass 
+        Multi-mass models are found by summing the DFs of individual mass
         components and adopting for each component
 
         .. math::
@@ -113,7 +110,7 @@ class limepy:
         if (self.multi):
             self._init_multi(self.mj, self.Mj)
             while self.diff > self.diffcrit:
-                self._poisson(True)           
+                self._poisson(True)
                 self._set_alpha()
                 if self.niter > 100:
                     self.converged=False
@@ -121,15 +118,15 @@ class limepy:
         self._rho0 = self._rho(self.W0, 0, self.ramax)
         self.r0 = 3./sqrt(self._rho0)
 
-        self._poisson(self.potonly)            
+        self._poisson(self.potonly)
         if (self.multi): self.Mj = self._Mjtot
-        if (self.scale): self._scale()    
+        if (self.scale): self._scale()
 
-        if (self.verbose): 
+        if (self.verbose):
             print "\n Model properties: "
             print " ----------------- "
             print " W0 = %5.2f; n = %1i"%(self.W0, self.n)
-            if (self.potonly): 
+            if (self.potonly):
                 print " M = %10.3f; U = %10.4f "%(self.M, self.U)
             else:
                 out1=(self.M,self.U,self.K,self.K/self.U)
@@ -139,7 +136,7 @@ class limepy:
 
     def _set_kwargs(self, W0, n, **kwargs):
         self.W0, self.n = W0, n
-        
+
         self.MS, self.RS, self.GS = 1e5, 3, 0.004302
         self.scale_radius = 'rh'
         self.scale=False
@@ -171,15 +168,13 @@ class limepy:
             if ('mj' not in kwargs and 'Mj' in kwargs) or \
                ('Mj' not in kwargs and 'mj' in kwargs):
                 raise ValueError("Error: Supply both mj and Mj")
-        self.raj = [self.ra]        
+        self.raj = [self.ra]
 
-
-                
-        return 
+        return
 
     def _logcheck(self, t, y):
         """ Logs steps and checks for final values """
-        if (t>0): 
+        if (t>0):
             self.r, self.y = numpy.r_[self.r, t], numpy.c_[self.y, y]
         return 0 if (y[0]>1e-6) else -1
 
@@ -196,26 +191,26 @@ class limepy:
     def _init_multi(self, mj, Mj):
         """ Initialise parameters and arrays for multi-mass system"""
         self.multi=True
-        self.mj = numpy.array(mj) 
-        self.Mj = numpy.array(Mj) 
+        self.mj = numpy.array(mj)
+        self.Mj = numpy.array(Mj)
         self.nmbin = len(mj)
 
         # Set trial value for alpha_j array, will be updated in iterations
         self.alpha = self.Mj/sum(self.Mj)
         self.alpha/=sum(self.alpha)
         self._set_mass_function_variables()
-        self.diff = 1      
+        self.diff = 1
 
     def _set_alpha(self):
-        """ Set central rho_j for next iteration """ 
+        """ Set central rho_j for next iteration """
         self.alpha *= self.Mj/self._Mjtot
         self.alpha/=sum(self.alpha)
-        
+
         self._set_mass_function_variables()
         self.diff = sum((self._Mjtot/sum(self._Mjtot) -
                          self.Mj/sum(self.Mj))**2)/len(self._Mjtot)
         self.niter+=1
-        if (self.verbose): 
+        if (self.verbose):
             Mjin,Mjit="", ""
             for j in range(self.nmbin):
                 Mjin=Mjin+"%12.8f "%(self.Mj[j]/sum(self.Mj))
@@ -228,7 +223,7 @@ class limepy:
         """ Solves Poisson equation """
         # y = [phi, u_j, U, K_j], where u = -M(<r)/G
 
-        # Initialize 
+        # Initialize
         self.r = numpy.array([0])
         self.y = numpy.r_[self.W0, numpy.zeros(self.nmbin+1)]
         if (not potonly): self.y = numpy.r_[self.y, numpy.zeros(self.nmbin)]
@@ -237,20 +232,20 @@ class limepy:
         max_step = 1e4 if (potonly) else self.max_step
         sol = ode(self._odes)
         sol.set_integrator('dopri5',nsteps=1e6,max_step=max_step,atol=1e-8)
-        sol.set_solout(self._logcheck) 
+        sol.set_solout(self._logcheck)
         sol.set_f_params(potonly)
         sol.set_initial_value(self.y,0)
         sol.integrate(1e4)
 
-        # Extrapolate to r_t: phi(r) =~ a(r_t -r), a = GM/r_t^2 
+        # Extrapolate to r_t: phi(r) =~ a(r_t -r), a = GM/r_t^2
         p = 2*sol.y[0]*self.r[-1]/(self.G*-sol.y[1]/self.G)
         if (p<0.5):
-            rtfac = (1 - sqrt(1-2*p))/p 
+            rtfac = (1 - sqrt(1-2*p))/p
             self.rt = rtfac*self.r[-1] if (rtfac > 1) else self.r[-1]
         else:
             self.rt = self.r[-1]
 
-        if (self.rt < 1e4): 
+        if (self.rt < 1e4):
             self.converged=True
         else:
             self.converged=False
@@ -266,7 +261,7 @@ class limepy:
         self.dp1 = numpy.r_[0, self.y[1,1:]/self.r[1:-1]**2,
                             -self.G*self.M/self.rt**2]
 
-        self.A = self._ah/(2*pi*self.sig2)**1.5 
+        self.A = self._ah/(2*pi*self.sig2)**1.5
 
         if (not self.multi):
             self.mc = -numpy.r_[self.y[1,:],self.y[1,-1]]/self.G
@@ -298,7 +293,7 @@ class limepy:
                     betaj = self._beta(self.r, v2rj, v2tj)
 
                     kj = self.y[2+self.nmbin,:]
-                    
+
                     mcj = -numpy.r_[self.y[1+j,:], self.y[1+j,-1]]/self.G
                     rhj = numpy.interp(0.5*mcj[-1], mcj, self.r)
 
@@ -338,7 +333,7 @@ class limepy:
             dawsn_t = p**2*phi**(n+0.5)/gamma(n+1.5)
             dawsn_t*=(1 - p**2*phi/(n+1.5) + p**4*phi**2/((n+1.5)*(n+2.5)))
         else:
-            P  = (-1)**n * p**(1-2*n)/gamma(1.5) 
+            P  = (-1)**n * p**(1-2*n)/gamma(1.5)
             dawsn_series = sum((-1)**m * x**(2*m+1) * gamma(1.5)/gamma(m+1.5)
                                for m in range(n))
             dawsn_t = P*(dawsn(x) - dawsn_series)
@@ -353,7 +348,7 @@ class limepy:
         rho = numpy.zeros(n)
 
         for i in range(n):
-            if (phi.size==n)&(r.size==n): 
+            if (phi.size==n)&(r.size==n):
                 rho[i] = self._rhofunc(phi[i], r[i], ra)
             if (phi.size==n)&(r.size==1): rho[i] = self._rhofunc(phi[i], r, ra)
         return rho
@@ -361,14 +356,14 @@ class limepy:
     def _rhofunc(self, phi, r, ra):
         """ Dimensionless density as a function of phi and r (scalars only) """
         # Isotropic case first
-        rho = exp(phi)*gammainc(self.n+0.5, phi)  
+        rho = exp(phi)*gammainc(self.n+0.5, phi)
 
         # Add anisotropy
         if (self.ra < self.ramax)&(phi>0)&(r>0):
             p = r/ra
             rho += self._dawsn_t(p, phi)
-            rho /= (1+p**2) 
-        return rho 
+            rho /= (1+p**2)
+        return rho
 
     def _get_v2(self, phi, r, rho, ra):
         v2, v2r, v2t = numpy.zeros(r.size), numpy.zeros(r.size), numpy.zeros(r.size)
@@ -376,14 +371,14 @@ class limepy:
             v2[i], v2r[i], v2t[i] = self._rhov2func(phi[i], r[i], ra)/rho[i]
 #        v2t = v2 - v2r
 
-        return v2, v2r, v2t 
+        return v2, v2r, v2t
 
-    
+
     def _rhov2func(self, phi, r, ra):
         """ Product of density and mean square velocity """
 
         # Isotropic case first
-        rhov2r = exp(phi)*gammainc(self.n+1.5, phi)  
+        rhov2r = exp(phi)*gammainc(self.n+1.5, phi)
         rhov2 = rhov2r
         rhov2t = rhov2r
 
@@ -402,7 +397,7 @@ class limepy:
 
                 rhov2r += B - C/p2
                 rhov2r /= p12
-                
+
                 rhov2t *= 2./p12
                 rhov2t += -Z*B + C*(Z + 2*p2*phi)/p2
                 rhov2t /= p12
@@ -420,7 +415,7 @@ class limepy:
 
     def _beta(self, r, v2r, v2t):
         beta = numpy.zeros(r.size)
-        if (self.ra < self.ramax): 
+        if (self.ra < self.ramax):
             c = (v2r>0)
             beta[c] = 1.0 - 0.5*v2t[c]/v2r[c]
         return beta
@@ -428,27 +423,27 @@ class limepy:
     def _odes(self, x, y, potonly):
         """ Solve ODEs """
         # y = [phi, u_j, U, K_j], where u = -M(<r)/G
-        if (self.multi): 
+        if (self.multi):
             derivs = [numpy.sum(y[1:1+self.nmbin])/x**2] if (x>0) else [0]
             for j in range(self.nmbin):
                 phi, ra = y[0]/self.sig2[j], self.raj[j]
                 derivs.append(-x**2*self._ah[j]*self._rhofunc(phi, x, ra))
-            dUdx  = 2.0*pi*numpy.sum(derivs[1:1+self.nmbin])*y[0] 
+            dUdx  = 2.0*pi*numpy.sum(derivs[1:1+self.nmbin])*y[0]
         else:
             derivs = [y[1]/x**2] if (x>0) else [0]
             derivs.append(-x**2*self._rhofunc(y[0], x, self.ra))
-            dUdx  = 2.0*pi*derivs[1]*y[0] 
+            dUdx  = 2.0*pi*derivs[1]*y[0]
         derivs.append(dUdx)
 
         if (not potonly): #dK_j/dx
-            for j in range(self.nmbin):      
+            for j in range(self.nmbin):
                 rhov2j = self._rhov2func(y[0]/self.sig2[j], x, self.raj[j])[0]
                 derivs.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rhov2j)
         return derivs
 
     def _setup_phi_interpolator(self):
         """ Setup interpolater for phi, works on scalar and arrays """
-        # Generate piecewise 3th order polynomials to connect phi, using phi' 
+        # Generate piecewise 3th order polynomials to connect phi, using phi'
         self._interpolator_set = True
         phi_and_derivs = numpy.vstack([[self.phi],[self.dp1]]).T
         self._phi_poly =PiecewisePolynomial(self.r,phi_and_derivs,direction=1)
@@ -487,15 +482,15 @@ class limepy:
 
         # All other stuff
         if (not self.potonly):
-            self.rho *= Mstar/Rstar**3 
+            self.rho *= Mstar/Rstar**3
             self.v2, self.v2r, self.v2t = (q*v2star for q in [self.v2,
                                                           self.v2r,self.v2t])
             self.K *= Mstar*v2star
 
             if (self.multi):
-                self.rhoj *= Mstar/Rstar**3 
-                self.mcj *= Mstar 
-                self.rhj *= Rstar 
+                self.rhoj *= Mstar/Rstar**3
+                self.mcj *= Mstar
+                self.rhj *= Rstar
                 self.v2j,self.v2rj,self.v2tj=(q*v2star for q in
                                               [self.v2j, self.v2rj,self.v2tj])
                 self.kj,self.Kj=(q*Mstar*v2star for q in [self.kj, self.Kj])
@@ -512,43 +507,43 @@ class limepy:
 
         phi = numpy.zeros([r.size])
         inrt = (r<self.rt)
-        # Use 3th order polynomials to interp, using phi' 
+        # Use 3th order polynomials to interp, using phi'
         if (sum(inrt)>0): phi[inrt] = self._phi_poly(r[inrt])
         return phi
 
     def df(self, *arg):
         """
         Returns the normalised DF, can only be called after Poisson solver
-        Arguments can be: 
+        Arguments can be:
           - r, v, j                (isotropic models)
           - r, v, theta, j         (anisotropic models)
           - x, y, z, vx, vy, vz, j (all models)
         Here j specifies the mass bin, j=0 for single mass
         Works with scalar and ndarray input
         """
-        if len(arg) == 3: 
+        if len(arg) == 3:
             r, v = (self.tonp(q) for q in arg[:-1])
             j = arg[-1]
-            if (self.raj[j]<self.ramax): 
+            if (self.raj[j]<self.ramax):
                 raise ValueError("Error: ra<ramax: df needs r,v,angle,j")
 
-        if len(arg) == 4: 
+        if len(arg) == 4:
             r, v, theta = (self.tonp(q) for q in arg[:-1])
             j = arg[-1]
-            if (self.raj[j]>self.ramax): 
+            if (self.raj[j]>self.ramax):
                 raise ValueError("Error: ra>ramax: df needs r,v,j")
 
-        r2 = r**2            
+        r2 = r**2
         v2 = v**2
-        if len(arg) == 7: 
+        if len(arg) == 7:
             x, y, z, vx, vy, vz = (self.tonp(q) for q in arg[:-1])
             j = arg[-1]
             r2 = x**2 + y**2 + z**2
             r = sqrt(r2)
             v2 = vx**2 + vy**2 + vz**2
 
-        phi = self.interp_phi(r) 
-        vesc2 = 2.0*phi                            # Note: phi > 0      
+        phi = self.interp_phi(r)
+        vesc2 = 2.0*phi                            # Note: phi > 0
 
         DF = numpy.zeros([max(r.size, v.size)])
         c = (r<self.rt)&(v2<vesc2)
@@ -564,7 +559,7 @@ class limepy:
             if (len(arg)==4): J2 = sin(theta)**2*v2*r2
 
             DF[c] *= exp(-J2[c]/(2*self.raj[j]**2*self.sig2[j]))
-            
+
         DF[c] *= self.A[j]
 
         return DF

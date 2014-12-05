@@ -13,8 +13,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
 import os
+import sys
 
 ## Make ReadTheDocs think scipy and numpy are installed
 
@@ -27,10 +27,14 @@ else:
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
-            return Mock()
+        return Mock()
 
-MOCK_MODULES = ['numpy', 'scipy', 'PiecewisePolynomial']
+#MOCK_MODULES = ['numpy', 'scipy', 'scipy.integrate', 'scipy.interpolate',
+#                'scipy.special', 'scipy.misc']
+MOCK_MODULES = ['numpy', 'scipy', 'scipy.interpolate', 'scipy.special',
+                'scipy.integrate']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+print sys.path
 
 
 # If extensions (or modules to document with autodoc) are in another
