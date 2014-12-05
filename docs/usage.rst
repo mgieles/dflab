@@ -17,7 +17,7 @@ The isotropic distribution functions are defined as
 .. math::
    f_n(E) = \displaystyle \begin{cases}
    A\exp(-E), &n=1 \\
-   A\left[\exp(-E) - \sum_{m=0}^{n-2} \frac{(-E)^m}{!m} \right], &n>1
+   \displaystyle A\left[\exp(-E) - \sum_{m=0}^{n-2} \frac{(-E)^m}{!m} \right], &n>1
    \end{cases}
 
 where :math:`\displaystyle E = \frac{v^2/2 - \phi + \phi(r_{\rm t})}{\sigma^2}` and :math:`\sigma` is a velocity scale and :math:`0 < \phi-\phi(r_{\rm t}) <W_0/\sigma^2`

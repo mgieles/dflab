@@ -53,16 +53,25 @@ class limepy:
 
         **Examples:**
 
-        Construct a King model with :math:`W_0 = 7` and print :math:`r_t/r_0` and :math:`r_v/r_h`
+        Construct a Woolley model with :math:`W_0 = 7` and print :math:`r_{\rm t}/r_0` and :math:`r_{\rm v}/r_{\rm h}`
 
-        >>> k = limepy(7, 2)
+        >>> k = limepy(7, 1)
         >>> print k.rt/k.r0, k.rv/k.rh
 
-        Create a Wilson model with :math:`W_0 = 12` in Henon/N-body units: :math:`G=M=10^{-4}=1`
+        Construct a Michie-King model and print :math:`r_{\rm a}/r_{\rm h}`
+
+        >>> a = limepy(7, 2, ra=2)
+        >>> print a.ra/a.rh
+
+        Create a Wilson model with :math:`W_0 = 12` in Henon/N-body
+        units: :math:`G=M=r_{\rm v}=1` and print the normalisation
+        constant :math:`A` of the DF and the DF in the centre:
 
         >>> w = limepy(12, 3, scale=True, GS=1, MS=1, RS=1, scale_radius='rv')
+        >>> print w.A, w.df(0,0,0)
 
-        Multi-mass king model in physical units with :math:`r_h = 1 {\rm pc}` and :math:`M = 10^5 {\rm M_{\odot}}`
+        Multi-mass King model in physical units with :math:`r_{\rm h}
+        = 1\,{\rm pc}` and :math:`M = 10^5\,{\rm M_{\odot}}`
 
         >>> m = limepy(7, 2, mj=[0.3,1,5], Mj=[9,3,1], scale=True, MS=1e5, RS=1)
 
@@ -74,7 +83,7 @@ class limepy:
         .. math::
             f_n(E) = \displaystyle \begin{cases}
             A\exp(-E), &n=1 \\
-            A\left[\exp(-E) - \sum_{m=0}^{n-2} \frac{(-E)^m}{!m} \right], &n>1
+            \displaystyle A\left[\exp(-E) - \sum_{m=0}^{n-2} \frac{(-E)^m}{!m} \right], &n>1
             \end{cases}
 
         where :math:`\displaystyle E = \frac{v^2/2 - \phi + \phi(r_{\rm t})}{\sigma^2}` and :math:`\sigma` is a velocity scale and :math:`0 < \phi-\phi(r_{\rm t}) <W_0/\sigma^2`
