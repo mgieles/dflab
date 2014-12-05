@@ -57,16 +57,16 @@ class limepy:
         Examples
         --------
 
-        Construct a King model with W0 = 7 and print rt/r0 and rv/rh
+        Construct a King model with :math:`W_0 = 7` and print :math:`r_t/r_0` and :math:`r_v/r_h`
 
         >>> k = limepy(7, 2)
         >>> print k.rt/k.r0, k.rv/k.rh
 
-        Create a Wilson model with W0 = 12 in Henon/N-body units: G=M=-4E=1
+        Create a Wilson model with :math:`W_0 = 12` in Henon/N-body units: :math:`G=M=10^{-4}=1`
 
         >>> w = limepy(12, 3, scale=True, GS=1, MS=1, RS=1, scale_radius='rv')
 
-        Multi-mass king model in physical units with rh = 1 pc and M = 1e5 Msun
+        Multi-mass king model in physical units with :math:`r_h = 1 {\rm pc}` and :math:`M = 10^5 {\rm M_{\odot}}`
 
         >>> m = limepy(7, 2, mj=[0.3,1,5], Mj=[9,3,1], scale=True, MS=1e5, RS=1)
 
@@ -82,8 +82,7 @@ class limepy:
             A[\exp(-E) - \sum_{m=0}^{n-2} (-E)^m/m! ], &n>1
             \end{cases}
 
-        where E = (v2/2 - phi + phi(r_t))/sig2, sig is a velocity scale and
-              0<phi<W0/sig2
+        where :math:`E = (v^2/2 - \phi + \phi(r_t))/\sigma^2,\, \sigma` is a velocity scale and :math:`0 < \phi <W_0/\sigma^2`
 
          *  n = 1 : `Woolley (1954) <http://adsabs.harvard.edu/abs/1954MNRAS.114..191W>`_
          *  n = 2 : `King (1966) <http://adsabs.harvard.edu/abs/1966AJ.....71...64K>`_
@@ -92,16 +91,16 @@ class limepy:
         The anisotropic models are
 
         .. math::
-            f(E, J^2, n) = \exp(-J^2)f(E, n),
+            f_n(E, J^2) = \exp(-J^2)f_n(E),
 
-        where J^2 = (r*vt)^2/(2*ra2*sig2), here ra is the anisotropy radius
+        where :math:`J^2 = (rv_t)^2/(2r_a^2\sigma^2)`, here ra is the anisotropy radius
 
         Multi-mass models are found by summing the DFs of individual mass
         components and adopting for each component
 
         .. math::
-            \sigma_j \propto  \mu_j^{-delta},\\
-            r_{{\rm a},j}  \propto  \mu_j^{eta}
+             \sigma_j       &\propto  \mu_j^{-\delta}\\
+             r_{{\rm a},j}  &\propto  \mu_j^{\eta}
 
         where :math:`\mu_j = m_j/m` and :math:`m` is the central density weighted mean mj
 
