@@ -13,14 +13,16 @@ from math import factorial
 class limepy:
     def __init__(self, W0, n,**kwargs):
         r"""
-        (MM), (A)limepy
-        (Multi-Mass) (Anisotropy) Lowered Isothermal Model Explorer in Python
+        (MM, A)limepy
 
-        Class to solve lowered isothermal models
+        (Multi-Mass, Anisotropy) Lowered Isothermal Model Explorer in Python
 
-        Woolley (1954), King (1966) and Wilson (1975) models
-        Generalised following the prescription by Davoust (1977)
-        Option to include multiple mass components a la Gunn & Griffin (1979)
+        Class to generate solutions to lowered isothermal models\\
+        \\
+        Includes: Woolley (1954), King (1966) and Wilson (1975)
+        models, generalised following the prescription by Davoust
+        (1977) with option to include multiple mass components a la
+        Gunn & Griffin (1979)
 
         Parameters
         ----------
@@ -77,12 +79,12 @@ class limepy:
         The isotropic distribution functions are defined as
 
         .. math::
-            f_n(E) = \begin{cases}
+            f_n(E) = \displaystyle \begin{cases}
             A\exp(-E), &n=1 \\
-            A[\exp(-E) - \sum_{m=0}^{n-2} (-E)^m/m! ], &n>1
+            A\left[\exp(-E) - \sum_{m=0}^{n-2} \frac{(-E)^m}{!m} \right], &n>1
             \end{cases}
 
-        where :math:`E = (v^2/2 - \phi + \phi(r_t))/\sigma^2,\, \sigma` is a velocity scale and :math:`0 < \phi <W_0/\sigma^2`
+        where :math:`\displaystyle E = \frac{v^2/2 - \phi + \phi(r_{\rm t})}{\sigma^2}` and :math:`\sigma` is a velocity scale and :math:`0 < \phi-\phi(r_{\rm t}) <W_0/\sigma^2`
 
          *  n = 1 : `Woolley (1954) <http://adsabs.harvard.edu/abs/1954MNRAS.114..191W>`_
          *  n = 2 : `King (1966) <http://adsabs.harvard.edu/abs/1966AJ.....71...64K>`_
@@ -93,7 +95,7 @@ class limepy:
         .. math::
             f_n(E, J^2) = \exp(-J^2)f_n(E),
 
-        where :math:`J^2 = (rv_t)^2/(2r_a^2\sigma^2)`, here ra is the anisotropy radius
+        where :math:`J^2 = (rv_t)^2/(2r_{\rm a}^2\sigma^2)`, here :math:`r_{\rm a}` is the anisotropy radius
 
         Multi-mass models are found by summing the DFs of individual mass
         components and adopting for each component
@@ -102,7 +104,7 @@ class limepy:
              \sigma_j       &\propto  \mu_j^{-\delta}\\
              r_{{\rm a},j}  &\propto  \mu_j^{\eta}
 
-        where :math:`\mu_j = m_j/m` and :math:`m` is the central density weighted mean mj
+        where :math:`\mu_j = m_j/\bar{m}` and :math:`\bar{m}` is the central density weighted mean mass.
 
         """
 
