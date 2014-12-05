@@ -76,16 +76,23 @@ class limepy:
 
         The isotropic distribution functions are defined as
 
+<<<<<<< Updated upstream
                      / Aexp(-E)                                 , n=1
           f(E, n) = <
                      \ A[exp(-E) - Sum_{m=0}^{n-2} (-E)^m/!m ]  , n>1
+=======
+        .. math::
+              f_n(E) = 
+              Aexp(-E)  , n=1 \\
+              A[exp(-E) - Sum_{m=0}^{n-2} (-E)^m/!m ]  , n>1
+>>>>>>> Stashed changes
 
         where E = (v2/2 - phi + phi(r_t))/sig2, sig is a velocity scale and
               0<phi<W0/sig2
 
-          n = 1 : Woolley 1954, MNRAS, 114, 191
-          n = 2 : King 1966, AJ, 72, 64
-          n = 3 : Wilson 1975, AJ, 80, 175
+         *  n = 1 : `Woolley (1954) <http://adsabs.harvard.edu/abs/1954MNRAS.114..191W>`_
+         *  n = 2 : `King (1966) <http://adsabs.harvard.edu/abs/1966AJ.....71...64K>`_
+         *  n = 3 : `Wilson (1975) <http://adsabs.harvard.edu/abs/1975AJ.....80..175W>`_
 
         The anisotropic models are
 
