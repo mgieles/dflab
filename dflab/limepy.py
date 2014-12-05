@@ -117,7 +117,7 @@ class limepy:
                 self._set_alpha()
                 if self.niter > 100:
                     self.converged=False
-                    raise ValueError("Failed to concverge")
+
         self._rho0 = self._rho(self.W0, 0, self.ramax)
         self.r0 = 3./sqrt(self._rho0)
 
@@ -252,8 +252,6 @@ class limepy:
             self.converged=True
         else:
             self.converged=False
-            message="Error: Model did not converge, ra too small"
-            raise ValueError(message)
 
         # Fill arrays needed if potonly=True
         self.r = numpy.r_[self.r, self.rt]
@@ -529,21 +527,22 @@ class limepy:
             j = arg[-1]
             if (self.raj[j]<self.ramax):
                 raise ValueError("Error: ra<ramax: df needs r,v,angle,j")
+            r2, v2 = r**2, v**2
+
 
         if len(arg) == 4:
             r, v, theta = (self.tonp(q) for q in arg[:-1])
             j = arg[-1]
             if (self.raj[j]>self.ramax):
                 raise ValueError("Error: ra>ramax: df needs r,v,j")
+            r2, v2 = r**2, v**2
 
-        r2 = r**2
-        v2 = v**2
         if len(arg) == 7:
             x, y, z, vx, vy, vz = (self.tonp(q) for q in arg[:-1])
             j = arg[-1]
             r2 = x**2 + y**2 + z**2
-            r = sqrt(r2)
             v2 = vx**2 + vy**2 + vz**2
+            r, v = sqrt(r2), sqrt(v2)
 
         phi = self.interp_phi(r)
         vesc2 = 2.0*phi                            # Note: phi > 0
