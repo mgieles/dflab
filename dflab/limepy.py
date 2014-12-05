@@ -13,19 +13,15 @@ from math import factorial
 class limepy:
     def __init__(self, W0, n,**kwargs):
         r"""
-        (MM, A)limepy
 
-        (Multi-Mass, Anisotropy) Lowered Isothermal Model Explorer in Python
+        *(MM, A)limepy*
 
-        Class to generate solutions to lowered isothermal models\\
-        \\
-        Includes: Woolley (1954), King (1966) and Wilson (1975)
-        models, generalised following the prescription by Davoust
-        (1977) with option to include multiple mass components a la
-        Gunn & Griffin (1979)
+        *(Multi-Mass, Anisotropic) Lowered Isothermal Model Explorer in Python*
 
-        Parameters
-        ----------
+        Class to generate solutions to lowered isothermal models.
+
+        **Parameters:**
+
         W0 : scalar
            Central dimensionless potential
         n : int
@@ -55,9 +51,7 @@ class limepy:
         verbose : bool, optional
                 Print diagnostics; default=False
 
-
-        Examples
-        --------
+        **Examples:**
 
         Construct a King model with :math:`W_0 = 7` and print :math:`r_t/r_0` and :math:`r_v/r_h`
 
@@ -72,9 +66,8 @@ class limepy:
 
         >>> m = limepy(7, 2, mj=[0.3,1,5], Mj=[9,3,1], scale=True, MS=1e5, RS=1)
 
-
-        Description of the distribution function
-        ----------------------------------------
+        
+        **Description of the distribution function:**
 
         The isotropic distribution functions are defined as
 
@@ -90,15 +83,19 @@ class limepy:
          *  n = 2 : `King (1966) <http://adsabs.harvard.edu/abs/1966AJ.....71...64K>`_
          *  n = 3 : `Wilson (1975) <http://adsabs.harvard.edu/abs/1975AJ.....80..175W>`_
 
-        The anisotropic models are
+        Radial anisotropy a la `Michie (1963)
+        <http://adsabs.harvard.edu/abs/1963MNRAS.125..127M>`_ can be
+        included
 
         .. math::
             f_n(E, J^2) = \exp(-J^2)f_n(E),
 
         where :math:`J^2 = (rv_t)^2/(2r_{\rm a}^2\sigma^2)`, here :math:`r_{\rm a}` is the anisotropy radius
 
-        Multi-mass models are found by summing the DFs of individual mass
-        components and adopting for each component
+        Multi-mass models are found by summing the DFs of individual
+        mass components and adopting for each component following
+        `Gunn & Griffin (1979)
+        <http://adsabs.harvard.edu/abs/1979AJ.....84..752G>`_
 
         .. math::
              \sigma_j       &\propto  \mu_j^{-\delta}\\

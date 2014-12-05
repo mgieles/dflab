@@ -12,7 +12,9 @@ dflab
 ..         :target: https://pypi.python.org/pypi/dflab
 
 
-DF based stuff
+Python environment for solving distribution function (DF) based
+models. Currently contains 1 class for solving lowered isothermal
+models (limepy)
 
 * Free software: BSD license
 * Documentation: https://dflab.readthedocs.org.
@@ -20,4 +22,8 @@ DF based stuff
 Features
 --------
 
-* TODO
+* Poisson solver
+* Normalised DF values
+* Compute projected properties of the models (TBS)
+* Initial conditions generation (TBD)
+
