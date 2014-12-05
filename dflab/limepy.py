@@ -12,7 +12,7 @@ from math import factorial
 
 class limepy:
     def __init__(self, W0, n,**kwargs):
-        """
+        r"""
         (MM), (A)limepy
         (Multi-Mass) (Anisotropy) Lowered Isothermal Model Explorer in Python
 
@@ -76,16 +76,11 @@ class limepy:
 
         The isotropic distribution functions are defined as
 
-<<<<<<< Updated upstream
-                     / Aexp(-E)                                 , n=1
-          f(E, n) = <
-                     \ A[exp(-E) - Sum_{m=0}^{n-2} (-E)^m/!m ]  , n>1
-=======
         .. math::
-              f_n(E) = 
-              Aexp(-E)  , n=1 \\
-              A[exp(-E) - Sum_{m=0}^{n-2} (-E)^m/!m ]  , n>1
->>>>>>> Stashed changes
+            f_n(E) = \begin{cases}
+            A\exp(-E), &n=1 \\
+            A[\exp(-E) - \sum_{m=0}^{n-2} (-E)^m/m! ], &n>1
+            \end{cases}
 
         where E = (v2/2 - phi + phi(r_t))/sig2, sig is a velocity scale and
               0<phi<W0/sig2
@@ -97,7 +92,7 @@ class limepy:
         The anisotropic models are
 
         .. math::
-          f(E, J^2, n) = \exp(-J^2)f(E, n),
+            f(E, J^2, n) = \exp(-J^2)f(E, n),
 
         where J^2 = (r*vt)^2/(2*ra2*sig2), here ra is the anisotropy radius
 
@@ -105,8 +100,8 @@ class limepy:
         components and adopting for each component
 
         .. math::
-        \sigma_j \propto \mu_j^{-delta},\\
-        r_{{\rm a},j} \propto \mu_j^{eta}
+            \sigma_j \propto  \mu_j^{-delta},\\
+            r_{{\rm a},j}  \propto  \mu_j^{eta}
 
         where :math:`\mu_j = m_j/m` and :math:`m` is the central density weighted mean mj
 
