@@ -83,7 +83,7 @@ class limepy:
         .. math::
             f_n(E) = \displaystyle \begin{cases}
             A\exp(-E), &n=1 \\
-            \displaystyle A\left[\exp(-E) - \sum_{m=0}^{n-2} \frac{(-E)^m}{!m} \right], &n>1
+            \displaystyle A\left[\exp(-E) - \sum_{m=0}^{n-2} \frac{(-E)^m}{m!} \right], &n>1
             \end{cases}
 
         where :math:`\displaystyle E = \frac{v^2/2 - \phi + \phi(r_{\rm t})}{\sigma^2}` and :math:`\sigma` is a velocity scale and :math:`0 < \phi-\phi(r_{\rm t}) <W_0/\sigma^2`
@@ -162,7 +162,7 @@ class limepy:
         self.niter = 0
 
         self.potonly, self.multi, self.verbose = [False]*3
-        self.ra, self.ramax = [100]*2
+        self.ra, self.ramax = 1e6, 100
 
         self.converged=False
         self._interpolator_set=False
@@ -471,6 +471,7 @@ class limepy:
         self.rs = Rstar
         self.sig2 *= v2star
         self.ra *= Rstar
+        self.ramax *= Rstar
 
         # Scale all variable needed when run with potonly=True
         self.r, self.r0, self.rt = (q*Rstar for q in [self.r,self.r0,self.rt])
@@ -531,16 +532,11 @@ class limepy:
         if len(arg) == 3:
             r, v = (self.tonp(q) for q in arg[:-1])
             j = arg[-1]
-            if (self.raj[j]<self.ramax):
-                raise ValueError("Error: ra<ramax: df needs r,v,angle,j")
             r2, v2 = r**2, v**2
-
 
         if len(arg) == 4:
             r, v, theta = (self.tonp(q) for q in arg[:-1])
             j = arg[-1]
-            if (self.raj[j]>self.ramax):
-                raise ValueError("Error: ra>ramax: df needs r,v,j")
             r2, v2 = r**2, v**2
 
         if len(arg) == 7:
