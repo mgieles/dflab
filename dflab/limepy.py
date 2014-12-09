@@ -53,12 +53,14 @@ class limepy:
 
         **Examples:**
 
-        Construct a Woolley model with :math:`W_0 = 7` and print :math:`r_{\rm t}/r_0` and :math:`r_{\rm v}/r_{\rm h}`
+        Construct a Woolley model with :math:`W_0 = 7` and print
+        :math:`r_{\rm t}/r_0` and :math:`r_{\rm v}/r_{\rm h}`
 
         >>> k = limepy(7, 1)
         >>> print k.rt/k.r0, k.rv/k.rh
 
-        Construct a Michie-King model and print :math:`r_{\rm a}/r_{\rm h}`
+        Construct a Michie-King model and print :math:`r_{\rm
+        a}/r_{\rm h}`
 
         >>> a = limepy(7, 2, ra=2)
         >>> print a.ra/a.rh
@@ -86,7 +88,9 @@ class limepy:
             \displaystyle A\left[\exp(-E) - \sum_{m=0}^{n-2} \frac{(-E)^m}{m!} \right], &n>1
             \end{cases}
 
-        where :math:`\displaystyle E = \frac{v^2/2 - \phi + \phi(r_{\rm t})}{\sigma^2}` and :math:`\sigma` is a velocity scale and :math:`0 < \phi-\phi(r_{\rm t}) <W_0/\sigma^2`
+        where :math:`\displaystyle E = \frac{v^2/2 - \phi +
+        \phi(r_{\rm t})}{\sigma^2}` and :math:`\sigma` is a velocity
+        scale and :math:`0 < \phi-\phi(r_{\rm t}) <W_0/\sigma^2`
 
          *  n = 1 : `Woolley (1954) <http://adsabs.harvard.edu/abs/1954MNRAS.114..191W>`_
          *  n = 2 : `King (1966) <http://adsabs.harvard.edu/abs/1966AJ.....71...64K>`_
@@ -99,7 +103,8 @@ class limepy:
         .. math::
             f_n(E, J^2) = \exp(-J^2)f_n(E),
 
-        where :math:`J^2 = (rv_t)^2/(2r_{\rm a}^2\sigma^2)`, here :math:`r_{\rm a}` is the anisotropy radius
+        where :math:`J^2 = (rv_t)^2/(2r_{\rm a}^2\sigma^2)`, here
+        :math:`r_{\rm a}` is the anisotropy radius
 
         Multi-mass models are found by summing the DFs of individual
         mass components and adopting for each component following
@@ -110,7 +115,8 @@ class limepy:
              \sigma_j       &\propto  \mu_j^{-\delta}\\
              r_{{\rm a},j}  &\propto  \mu_j^{\eta}
 
-        where :math:`\mu_j = m_j/\bar{m}` and :math:`\bar{m}` is the central density weighted mean mass.
+        where :math:`\mu_j = m_j/\bar{m}` and :math:`\bar{m}` is the
+        central density weighted mean mass.
 
         """
 
@@ -124,8 +130,9 @@ class limepy:
                 if self.niter > 100:
                     self.converged=False
 
-        self._rho0 = self._rho(self.W0, 0, self.ramax)
-        self.r0 = 3./sqrt(self._rho0)
+        self.r0 = 3./sqrt(self._rho(self.W0, 0, self.ramax))
+
+        if (self.multi): self.r0j = sqrt(self.sig2)*self.r0
 
         self._poisson(self.potonly)
         if (self.multi): self.Mj = self._Mjtot
@@ -376,10 +383,8 @@ class limepy:
         v2, v2r, v2t = numpy.zeros(r.size), numpy.zeros(r.size), numpy.zeros(r.size)
         for i in range(r.size-1):
             v2[i], v2r[i], v2t[i] = self._rhov2func(phi[i], r[i], ra)/rho[i]
-#        v2t = v2 - v2r
 
         return v2, v2r, v2t
-
 
     def _rhov2func(self, phi, r, ra):
         """ Product of density and mean square velocity """
@@ -487,6 +492,7 @@ class limepy:
         if (self.multi):
             self.Mj *= Mstar
             self.raj *= Rstar
+            self.r0j *= Rstar
 
         # All other stuff
         if (not self.potonly):
@@ -568,10 +574,3 @@ class limepy:
 
         return DF
 
-mj=[0.4,0.7,1.4,10]
-Mj=[6,3,0.99,0.01]
-
-
-#m=limepy(7, 3, mj=mj, Mj=Mj, scale=True, MS=1, RS=3, verbose=True)
-
-#print m.Mj
