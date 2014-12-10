@@ -536,7 +536,7 @@ class limepy:
         Works with scalar and ndarray input
         """
         if (len(arg)<2)|(len(arg)==5)|(len(arg)==6)|(len(arg)>7):
-            raise ValueError("Error: df needs 3, 4 or 7 arguments")
+            raise ValueError("Error: df needs 2, 3, 4 or 7 arguments")
 
         if len(arg) == 2:
             r, v = (self.tonp(q) for q in arg)
