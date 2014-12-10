@@ -535,15 +535,22 @@ class limepy:
         Here j specifies the mass bin, j=0 for single mass
         Works with scalar and ndarray input
         """
+        if (len(arg)<2)|(len(arg)==5)|(len(arg)==6)|(len(arg)>7):
+            raise ValueError("Error: df needs 3, 4 or 7 arguments")
+
+        if len(arg) == 2:
+            r, v = (self.tonp(q) for q in arg)
+            j = 0
+
         if len(arg) == 3:
             r, v = (self.tonp(q) for q in arg[:-1])
             j = arg[-1]
-            r2, v2 = r**2, v**2
 
         if len(arg) == 4:
             r, v, theta = (self.tonp(q) for q in arg[:-1])
             j = arg[-1]
-            r2, v2 = r**2, v**2
+
+        if len(arg) < 7: r2, v2 = r**2, v**2
 
         if len(arg) == 7:
             x, y, z, vx, vy, vz = (self.tonp(q) for q in arg[:-1])
