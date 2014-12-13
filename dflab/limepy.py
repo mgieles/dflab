@@ -51,8 +51,8 @@ class limepy:
         verbose : bool, optional
                 Print diagnostics; default=False
 
-        Examples
-        ---------
+
+        Examples:
         
         Construct a Woolley model with W0 = 7 and print r_t/r_0 and r_v/r_h
 
