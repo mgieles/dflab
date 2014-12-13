@@ -51,72 +51,7 @@ class limepy:
         verbose : bool, optional
                 Print diagnostics; default=False
 
-        **Examples:**
-
-        Construct a Woolley model with :math:`W_0 = 7` and print
-        :math:`r_{\rm t}/r_0` and :math:`r_{\rm v}/r_{\rm h}`
-
-        >>> k = limepy(7, 1)
-        >>> print k.rt/k.r0, k.rv/k.rh
-
-        Construct a Michie-King model and print :math:`r_{\rm
-        a}/r_{\rm h}`
-
-        >>> a = limepy(7, 2, ra=2)
-        >>> print a.ra/a.rh
-
-        Create a Wilson model with :math:`W_0 = 12` in Henon/N-body
-        units: :math:`G=M=r_{\rm v}=1` and print the normalisation
-        constant :math:`A` of the DF and the DF in the centre:
-
-        >>> w = limepy(12, 3, scale=True, GS=1, MS=1, RS=1, scale_radius='rv')
-        >>> print w.A, w.df(0,0,0)
-
-        Multi-mass King model in physical units with :math:`r_{\rm h}
-        = 1\,{\rm pc}` and :math:`M = 10^5\,{\rm M_{\odot}}`
-
-        >>> m = limepy(7, 2, mj=[0.3,1,5], Mj=[9,3,1], scale=True, MS=1e5, RS=1)
-
-        
-        **Description of the distribution function:**
-
-        The isotropic distribution functions are defined as
-
-        .. math::
-            f_n(E) = \displaystyle \begin{cases}
-            A\exp(-E), &n=1 \\
-            \displaystyle A\left[\exp(-E) - \sum_{m=0}^{n-2} \frac{(-E)^m}{m!} \right], &n>1
-            \end{cases}
-
-        where :math:`\displaystyle E = \frac{v^2/2 - \phi +
-        \phi(r_{\rm t})}{\sigma^2}` and :math:`\sigma` is a velocity
-        scale and :math:`0 < \phi-\phi(r_{\rm t}) <W_0/\sigma^2`
-
-         *  n = 1 : `Woolley (1954) <http://adsabs.harvard.edu/abs/1954MNRAS.114..191W>`_
-         *  n = 2 : `King (1966) <http://adsabs.harvard.edu/abs/1966AJ.....71...64K>`_
-         *  n = 3 : `Wilson (1975) <http://adsabs.harvard.edu/abs/1975AJ.....80..175W>`_
-
-        Radial anisotropy a la `Michie (1963)
-        <http://adsabs.harvard.edu/abs/1963MNRAS.125..127M>`_ can be
-        included
-
-        .. math::
-            f_n(E, J^2) = \exp(-J^2)f_n(E),
-
-        where :math:`J^2 = (rv_t)^2/(2r_{\rm a}^2\sigma^2)`, here
-        :math:`r_{\rm a}` is the anisotropy radius
-
-        Multi-mass models are found by summing the DFs of individual
-        mass components and adopting for each component following
-        `Gunn & Griffin (1979)
-        <http://adsabs.harvard.edu/abs/1979AJ.....84..752G>`_
-
-        .. math::
-             \sigma_j       &\propto  \mu_j^{-\delta}\\
-             r_{{\rm a},j}  &\propto  \mu_j^{\eta}
-
-        where :math:`\mu_j = m_j/\bar{m}` and :math:`\bar{m}` is the
-        central density weighted mean mass.
+       .. include:: usageexamples.rst
 
         """
 
@@ -151,6 +86,8 @@ class limepy:
             print " rv/rh = %4.3f; rh/r0 = %6.3f; rt/r0 = %7.3f"%out2
 
     def _set_kwargs(self, W0, n, **kwargs):
+        if (n<1): raise ValueError("Error: n must be larger or equal to 1")
+        
         self.W0, self.n = W0, n
 
         self.MS, self.RS, self.GS = 1e5, 3, 0.004302
@@ -568,8 +505,15 @@ class limepy:
         E = (0.5*v2 - phi)/self.sig2[j]            # Dimensionless energy
         DF[c] = exp(-E[c])
 
-        for i in range(self.n-1):
-            DF[c] -= (-E[c])**i/factorial(i)
+        # Continous truncation parameter 
+        # From Gomez-Leyton & Velazquez 2014, J. Stat. Mech. 4, 6
+        # [their gamma relates to our n as g = n-1]
+
+        if (self.n>1):
+            DF[c] *= gammainc(self.n-1,-E)
+    
+#        for i in range(self.n-1):
+#            DF[c] -= (-E[c])**i/factorial(i)
 
         if (self.raj[j] < self.ramax):
             if (len(arg)==7): J2 = v2*r2 - (x*vx + y*vy + z*vz)**2
@@ -580,4 +524,7 @@ class limepy:
         DF[c] *= self.A[j]
 
         return DF
+
+
+
 
