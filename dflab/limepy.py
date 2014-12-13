@@ -14,13 +14,13 @@ class limepy:
     def __init__(self, W0, n,**kwargs):
         r"""
 
-        *(MM, A)limepy*
+        (MM, A)limepy
 
-        *(Multi-Mass, Anisotropic) Lowered Isothermal Model Explorer in Python*
+        (Multi-Mass, Anisotropic) Lowered Isothermal Model Explorer in Python
 
         Class to generate solutions to lowered isothermal models.
 
-        **Parameters:**
+        Parameters:
 
         W0 : scalar
            Central dimensionless potential
@@ -51,8 +51,29 @@ class limepy:
         verbose : bool, optional
                 Print diagnostics; default=False
 
-       .. include:: usageexamples.rst
+        Examples
+        ---------
+        
+        Construct a Woolley model with W0 = 7 and print r_t/r_0 and r_v/r_h
 
+        >>> k = limepy(7, 1)
+        >>> print k.rt/k.r0, k.rv/k.rh
+
+        Construct a Michie-King model and print r_a/r_h
+
+        >>> a = limepy(7, 2, ra=2)
+        >>> print a.ra/a.rh
+
+        Create a Wilson model with W_0 = 12 in Henon/N-body units: G = M = 
+        r_v = 1 and print the normalisation constant A of the DF and the 
+        value of the DF in the centre:
+        
+        >>> w = limepy(12, 3, scale=True, GS=1, MS=1, RS=1, scale_radius='rv')
+        >>> print w.A, w.df(0,0,0)
+
+        Multi-mass model in physical units with r_h = 1 pc and M = 10^5 M_sun
+
+        >>> m = limepy(7, 2, mj=[0.3,1,5], Mj=[9,3,1], scale=True, MS=1e5,RS=1)
         """
 
         self._set_kwargs(W0, n, **kwargs)
