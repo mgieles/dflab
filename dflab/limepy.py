@@ -538,7 +538,7 @@ class limepy:
         # [their gamma relates to our n as g = n-1]
 
         if (self.n>1):
-            DF[c] *= gammainc(self.n-1,-E)
+            DF[c] *= gammainc(self.n-1,-E[c])
     
 #        for i in range(self.n-1):
 #            DF[c] -= (-E[c])**i/factorial(i)
