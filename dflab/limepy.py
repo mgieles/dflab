@@ -149,7 +149,7 @@ class limepy:
             if ('mj' not in kwargs and 'Mj' in kwargs) or \
                ('Mj' not in kwargs and 'mj' in kwargs):
                 raise ValueError("Error: Supply both mj and Mj")
-        self.raj = [self.ra]
+        self.raj = numpy.array([self.ra])
 
         return
 
@@ -441,6 +441,7 @@ class limepy:
         self.rs = Rstar
         self.sig2 *= v2star
         self.ra *= Rstar
+        self.raj *= Rstar
         self.ramax *= Rstar
 
         # Scale all variable needed when run with potonly=True
@@ -456,7 +457,6 @@ class limepy:
 
         if (self.multi):
             self.Mj *= Mstar
-            self.raj *= Rstar
             self.r0j *= Rstar
 
         # All other stuff
