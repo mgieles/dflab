@@ -4,8 +4,8 @@ from __future__ import division, absolute_import
 import numpy
 from numpy import exp, sqrt, pi, sin
 from scipy.interpolate import PiecewisePolynomial
-from scipy.special import gamma, gammainc, dawsn
-from scipy.integrate import ode
+from scipy.special import gamma, gammainc, dawsn, hyp1f1 
+from scipy.integrate import ode, quad
 from math import factorial
 
 #     Authors: Mark Gieles, Alice Zocchi (Surrey 2014)
@@ -340,8 +340,14 @@ class limepy:
         # Add anisotropy
         if (self.ra < self.ramax)&(phi>0)&(r>0):
             p = r/ra
-            rho += self._dawsn_t(p, phi)
+            p2 = p**2
+#            rhoprev = rho + self._dawsn_t(p, phi)
+#            rhoprev/=(1+p**2)
+
+            g = self.n-1
+            rho += phi**(g+0.5)*(1 -exp(-phi*p2)*hyp1f1(g+0.5, g+1.5, phi*p2))/gamma(g+1.5)
             rho /= (1+p**2)
+
         return rho
 
     def _get_v2(self, phi, r, rho, ra):
@@ -360,31 +366,45 @@ class limepy:
         rhov2t = rhov2r
 
        # Add anisotropy
-        if (ra < self.ramax)&(r>0):
+        if (ra < self.ramax)&(r>0)&(phi>0):
             p, n = r/ra, self.n
             p2 = p**2
             p12 = 1+p2
-            if(phi>self.phicrit):
+            g = n-1
 
-                B, K, C = phi**(n+0.5)/gamma(n+1.5), n-1/p12, self._dawsn_t(p, phi)
-                Z = 2*K + 1
-                rhov2 *= (3+p2)/p12
-                rhov2 += -2*B*K + 2*C*(K+p2*phi)/p2
-                rhov2 /= p12
+            
+            def Eg(g, x):
+                return exp(x)*gammainc(g,x)
+            def rhov2arg(x, g, p, f):
+                return x*dawsn(p*sqrt(x))*Eg(g,phi-x)*2/p/gamma(1.5)
+            def rhov2targ(x, g, p, f):
+                return 2*x*exp(-p**2*x)*Eg(g+0.5,f-x)
 
-                rhov2r += B - C/p2
-                rhov2r /= p12
+            rhov2 = quad(rhov2arg, 0, phi, args=(g, p, phi,))[0]
+            rhov2t = quad(rhov2targ, 0, phi, args=(g, p, phi,))[0]
+            rhov2r = rhov2 - rhov2t
 
-                rhov2t *= 2./p12
-                rhov2t += -Z*B + C*(Z + 2*p2*phi)/p2
-                rhov2t /= p12
+#            if(phi>self.phicrit):
+#                B, K, C = phi**(n+0.5)/gamma(n+1.5), n-1/p12, self._dawsn_t(p, phi)
+#                Z = 2*K + 1
+#                rhov2 *= (3+p2)/p12
+#                rhov2 += -2*B*K + 2*C*(K+p2*phi)/p2
+#                rhov2 /= p12
 
-            elif (phi>0):
-                t1 = phi**(n+1.5)/gamma(n+2.5)
-                t2 = t1*phi/(n+2.5)
-                rhov2 = 3*t1 + (-5*p2+3)*t2
-                rhov2r = t1 + (1-p2)*t2
-                rhov2t = 2*(t1 -(2*p2**2 + p2 -1)*t2/p12)
+#                rhov2r += B - C/p2
+#                rhov2r /= p12
+
+#                rhov2t *= 2./p12
+#                rhov2t += -Z*B + C*(Z + 2*p2*phi)/p2
+#                rhov2t /= p12
+
+#            elif (phi>0):
+#                t1 = phi**(n+1.5)/gamma(n+2.5)
+#                t2 = t1*phi/(n+2.5)
+#                rhov2 = 3*t1 + (-5*p2+3)*t2
+#                rhov2r = t1 + (1-p2)*t2
+#                rhov2t = 2*(t1 -(2*p2**2 + p2 -1)*t2/p12)
+
         else:
             rhov2 *= 3
             rhov2t *= 2
@@ -555,4 +575,14 @@ class limepy:
 
 
 
+a = limepy(7,2,ra=2)
+print a.K, a.U, a.K/a.U, a.v2[0], a.v2t[0], a.v2r[0]
 
+#a = limepy(7,2)
+#print a.K, a.U, a.K/a.U, a.v2[0], a.v2t[0], a.v2r[0]
+
+
+import matplotlib.pylab as plt
+plt.ion()
+plt.clf()
+plt.plot(a.r, a.beta)
