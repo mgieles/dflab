@@ -336,10 +336,6 @@ class limepy:
             P2 = 1 - hyp1f1(1, g3, -fp2)
             if fp2 < 1e-2: P2 = fp2/g3 - fp2**2/(g3*g5) + fp2**3/(g3*g5*g7)
             if fp2 > 500: P2 = 1 - (g3-1)/fp2 
-            # b = 5 4/x
-            # b = 4 3/x
-            # b = 3.5 2.5/x
-
             rho += phi**(g+0.5)/gamma(g+1.5)*P2
             rho /= (1+p**2)
         return rho
@@ -396,7 +392,6 @@ class limepy:
     def _beta(self, r, v2r, v2t):
         beta = numpy.zeros(r.size)
         if (self.ra < self.ramax):
-            print self.rt
             c = (v2r>0.)
             beta[c] = 1.0 - 0.5*v2t[c]/v2r[c]
         return beta
