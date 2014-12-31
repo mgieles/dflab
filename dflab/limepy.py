@@ -11,7 +11,7 @@ from math import factorial
 #     Authors: Mark Gieles, Alice Zocchi (Surrey 2014)
 
 class limepy:
-    def __init__(self, W0, n,**kwargs):
+    def __init__(self, W0, g, **kwargs):
         r"""
 
         (MM, A)limepy
@@ -24,8 +24,8 @@ class limepy:
 
         W0 : scalar
            Central dimensionless potential
-        n : int
-          Order of truncation [1=Woolley, 2=King, 3=Wilson]; default=2
+        g : scalar
+          Order of truncation [0=Woolley, 1=King, 2=Wilson]; default=1
         mj : list, required for multi-mass system
           Mean mass of each component; default=None
         Mj : list, required for multi-mass system
@@ -56,13 +56,13 @@ class limepy:
         
         Construct a Woolley model with W0 = 7 and print r_t/r_0 and r_v/r_h
 
-        >>> k = limepy(7, 1)
+        >>> k = limepy(7, 0)
         >>> print k.rt/k.r0, k.rv/k.rh
         >>> 19.1293450185 1.17562140501
         
         Construct a Michie-King model and print r_a/r_h
 
-        >>> a = limepy(7, 2, ra=2)
+        >>> a = limepy(7, 1, ra=2)
         >>> print a.ra/a.rh
         >>> 5.55543555675
         
@@ -70,20 +70,20 @@ class limepy:
         r_v = 1 and print the normalisation constant A of the DF and the 
         value of the DF in the centre:
         
-        >>> w = limepy(12, 3, scale=True, GS=1, MS=1, RS=1, scale_radius='rv')
+        >>> w = limepy(12, 2, scale=True, GS=1, MS=1, RS=1, scale_radius='rv')
         >>> print w.A, w.df(0,0)
         >>> [ 0.00800902] [ 1303.40165523]
 
         Multi-mass model in physical units with r_h = 1 pc and M = 10^5 M_sun
         and print central densities of each bin over the total central density
 
-        >>> m = limepy(7, 2, mj=[0.3,1,5], Mj=[9,3,1], scale=True, MS=1e5,RS=1)
+        >>> m = limepy(7, 1, mj=[0.3,1,5], Mj=[9,3,1], scale=True, MS=1e5,RS=1)
         >>> print m.alpha
         >>> array([ 0.3072483 ,  0.14100799,  0.55174371])
 
         """
 
-        self._set_kwargs(W0, n, **kwargs)
+        self._set_kwargs(W0, g, **kwargs)
 
         if (self.multi):
             self._init_multi(self.mj, self.Mj)
@@ -104,7 +104,7 @@ class limepy:
         if (self.verbose):
             print "\n Model properties: "
             print " ----------------- "
-            print " W0 = %5.2f; n = %1i"%(self.W0, self.n)
+            print " W0 = %5.2f; n = %1i"%(self.W0, self.g)
             if (self.potonly):
                 print " M = %10.3f; U = %10.4f "%(self.M, self.U)
             else:
@@ -113,22 +113,20 @@ class limepy:
             out2=(self.rv/self.rh,self.rh/self.r0,self.rt/self.r0)
             print " rv/rh = %4.3f; rh/r0 = %6.3f; rt/r0 = %7.3f"%out2
 
-    def _set_kwargs(self, W0, n, **kwargs):
-        if (n<1): raise ValueError("Error: n must be larger or equal to 1")
+    def _set_kwargs(self, W0, g, **kwargs):
+        if (g<0): raise ValueError("Error: g must be larger or equal to 0")
         
-        self.W0, self.n = W0, n
+        self.W0, self.g = W0, g
 
         self.MS, self.RS, self.GS = 1e5, 3, 0.004302
         self.scale_radius = 'rh'
         self.scale=False
         self.max_step = 1e4
         self.diffcrit = 1e-10
-        self.xcrit = 3e-4*10**self.n # criterion to switch to dawsn approx
-        self.phicrit = 3e-2/10**self.n # criterion to switch to v2 approx
 
-        self.nmbin, self.delta, self.eta=1,0.5,0.5
+        self.nmbin, self.delta, self.eta = 1, 0.5, 0.5
 
-        self.G = 1/(4*pi)
+        self.G = 1.0/(4.0*pi)
         self.mu, self._ah = numpy.array([1.0]), numpy.array([1.0])
         self.sig2 = numpy.array([1.0])
         self.niter = 0
@@ -136,6 +134,7 @@ class limepy:
         self.potonly, self.multi, self.verbose = [False]*3
         self.ra, self.ramax = 1e6, 100
 
+        self.nstep=0
         self.converged=False
         self._interpolator_set=False
 
@@ -157,6 +156,7 @@ class limepy:
         """ Logs steps and checks for final values """
         if (t>0):
             self.r, self.y = numpy.r_[self.r, t], numpy.c_[self.y, y]
+        self.nstep+=1
         return 0 if (y[0]>1e-6) else -1
 
     def _set_mass_function_variables(self):
@@ -226,7 +226,7 @@ class limepy:
         else:
             self.rt = self.r[-1]
 
-        if (self.rt < 1e4):
+        if (self.rt < 1e4)&(sol.successful()):
             self.converged=True
         else:
             self.converged=False
@@ -304,19 +304,6 @@ class limepy:
                         self.mcj = numpy.vstack((self.mcj, mcj))
             self.beta = self._beta(self.r, self.v2r, self.v2t)
 
-    def _dawsn_t(self, p, phi):
-        """ Anisotropic term in rho and v2"""
-        n = self.n
-        x = p*sqrt(phi)
-        if (x < self.xcrit):
-            dawsn_t = p**2*phi**(n+0.5)/gamma(n+1.5)
-            dawsn_t*=(1 - p**2*phi/(n+1.5) + p**4*phi**2/((n+1.5)*(n+2.5)))
-        else:
-            P  = (-1)**n * p**(1-2*n)/gamma(1.5)
-            dawsn_series = sum((-1)**m * x**(2*m+1) * gamma(1.5)/gamma(m+1.5)
-                               for m in range(n))
-            dawsn_t = P*(dawsn(x) - dawsn_series)
-        return dawsn_t
 
     def _rho(self, phi, r, ra):
         """ Wrapper for _rhofunc when either phi or r, or both, are arrays """
@@ -335,19 +322,28 @@ class limepy:
     def _rhofunc(self, phi, r, ra):
         """ Dimensionless density as a function of phi and r (scalars only) """
         # Isotropic case first
-        rho = exp(phi)*gammainc(self.n+0.5, phi)
+        rho = exp(phi)*gammainc(self.g + 1.5, phi)
 
         # Add anisotropy
         if (self.ra < self.ramax)&(phi>0)&(r>0):
             p = r/ra
             p2 = p**2
-#            rhoprev = rho + self._dawsn_t(p, phi)
-#            rhoprev/=(1+p**2)
 
-            g = self.n-1
-            rho += phi**(g+0.5)*(1 -exp(-phi*p2)*hyp1f1(g+0.5, g+1.5, phi*p2))/gamma(g+1.5)
+            g = self.g
+
+            g3, g5, g7 = g+1.5, g+2.5, g+3.5
+            fp2 = phi*p2
+            P2 = 1 - hyp1f1(1, g3, -fp2)
+            if fp2 < 1e-2: P2 = fp2/g3 - fp2**2/(g3*g5) + fp2**3/(g3*g5*g7)
+            if fp2 > 500: P2 = 1 - (g3-1)/fp2 
+            # b = 5 4/x
+            # b = 4 3/x
+            # b = 3.5 2.5/x
+
+            rho += phi**(g+0.5)/gamma(g+1.5)*P2
             rho /= (1+p**2)
-
+            if (r<28.337)&(r>28.335): print r, p2, phi, fp2, P2, rho
+#            print r, p2, phi, fp2, P2, rho
         return rho
 
     def _get_v2(self, phi, r, rho, ra):
@@ -361,49 +357,38 @@ class limepy:
         """ Product of density and mean square velocity """
 
         # Isotropic case first
-        rhov2r = exp(phi)*gammainc(self.n+1.5, phi)
-        rhov2 = rhov2r
+        rhov2r = exp(phi)*gammainc(self.g + 2.5, phi)
+        rhov2  = rhov2r
         rhov2t = rhov2r
 
        # Add anisotropy
         if (ra < self.ramax)&(r>0)&(phi>0):
-            p, n = r/ra, self.n
+            p, g = r/ra, self.g
             p2 = p**2
             p12 = 1+p2
-            g = n-1
 
-            
-            def Eg(g, x):
-                return exp(x)*gammainc(g,x)
-            def rhov2arg(x, g, p, f):
-                return x*dawsn(p*sqrt(x))*Eg(g,phi-x)*2/p/gamma(1.5)
-            def rhov2targ(x, g, p, f):
-                return 2*x*exp(-p**2*x)*Eg(g+0.5,f-x)
+            g3, g5, g7 = g + 1.5, g + 2.5, g + 3.5
+            G3 = gamma(g3)
+            fp2 = phi*p2
 
-            rhov2 = quad(rhov2arg, 0, phi, args=(g, p, phi,))[0]
-            rhov2t = quad(rhov2targ, 0, phi, args=(g, p, phi,))[0]
-            rhov2r = rhov2 - rhov2t
+            P1 = phi**g3/G3/p12
+            P2 = (1 - hyp1f1(1, g3, -fp2) )/fp2
 
-#            if(phi>self.phicrit):
-#                B, K, C = phi**(n+0.5)/gamma(n+1.5), n-1/p12, self._dawsn_t(p, phi)
-#                Z = 2*K + 1
-#                rhov2 *= (3+p2)/p12
-#                rhov2 += -2*B*K + 2*C*(K+p2*phi)/p2
-#                rhov2 /= p12
+            # Taylor series near 0 for small fp2, accurate to 1e-8
+            if fp2 < 1e-2: P2 = 1/g3 - fp2/(g3*g5) + fp2**2/(g3*g5*g7)
+            if fp2 > 500: P2 = 1/fp2 - (g3-1)/fp2**2
 
-#                rhov2r += B - C/p2
-#                rhov2r /= p12
+            rhov2r /= p12
+            rhov2r += P1*(1/g3 - P2)
 
-#                rhov2t *= 2./p12
-#                rhov2t += -Z*B + C*(Z + 2*p2*phi)/p2
-#                rhov2t /= p12
+            P3 = fp2*hyp1f1(2, g7, -fp2)/(g3*g5)
+            P4 = hyp1f1(1, g5, -fp2)/g3
+            rhov2t *= 2/p12**2 
+            rhov2t += 2*P1*(1/g3/p12 + p2/p12*P2 + P3 - P4)
 
-#            elif (phi>0):
-#                t1 = phi**(n+1.5)/gamma(n+2.5)
-#                t2 = t1*phi/(n+2.5)
-#                rhov2 = 3*t1 + (-5*p2+3)*t2
-#                rhov2r = t1 + (1-p2)*t2
-#                rhov2t = 2*(t1 -(2*p2**2 + p2 -1)*t2/p12)
+            P5 = (3+p2)/p12
+            rhov2 *= P5/p12
+            rhov2 += P1*(P5/g3 + (p2-1)/p12*P2 + 2*P3 - 2*P4)
 
         else:
             rhov2 *= 3
@@ -413,7 +398,8 @@ class limepy:
     def _beta(self, r, v2r, v2t):
         beta = numpy.zeros(r.size)
         if (self.ra < self.ramax):
-            c = (v2r>0)
+            print self.rt
+            c = (v2r>0.)
             beta[c] = 1.0 - 0.5*v2t[c]/v2r[c]
         return beta
 
@@ -560,9 +546,6 @@ class limepy:
         if (self.n>1):
             DF[c] *= gammainc(self.n-1,-E[c])
     
-#        for i in range(self.n-1):
-#            DF[c] -= (-E[c])**i/factorial(i)
-
         if (self.raj[j] < self.ramax):
             if (len(arg)==7): J2 = v2*r2 - (x*vx + y*vy + z*vz)**2
             if (len(arg)==4): J2 = sin(theta)**2*v2*r2
@@ -575,14 +558,3 @@ class limepy:
 
 
 
-a = limepy(7,2,ra=2)
-print a.K, a.U, a.K/a.U, a.v2[0], a.v2t[0], a.v2r[0]
-
-#a = limepy(7,2)
-#print a.K, a.U, a.K/a.U, a.v2[0], a.v2t[0], a.v2r[0]
-
-
-import matplotlib.pylab as plt
-plt.ion()
-plt.clf()
-plt.plot(a.r, a.beta)
