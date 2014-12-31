@@ -1,12 +1,12 @@
-========
+========================
 Description of the model
-========
+========================
 
 Lowered isothermal models (limepy)
-----------------------------------------
+----------------------------------
 
 Isotropic models
-^^^^
+^^^^^^^^^^^^^^^^
 
 
 The isotropic distribution functions are defined as `(Gomez-Leyton \&
@@ -30,7 +30,7 @@ known models are found
 *  g = 2 : `Wilson (1975) <http://adsabs.harvard.edu/abs/1975AJ.....80..175W>`_
 
 Anisotropic models
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 
 Radial anisotropy a la `Michie (1963)
 <http://adsabs.harvard.edu/abs/1963MNRAS.125..127M>`_ can be

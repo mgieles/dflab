@@ -342,8 +342,6 @@ class limepy:
 
             rho += phi**(g+0.5)/gamma(g+1.5)*P2
             rho /= (1+p**2)
-            if (r<28.337)&(r>28.335): print r, p2, phi, fp2, P2, rho
-#            print r, p2, phi, fp2, P2, rho
         return rho
 
     def _get_v2(self, phi, r, rho, ra):
