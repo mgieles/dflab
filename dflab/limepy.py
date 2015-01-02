@@ -536,8 +536,8 @@ class limepy:
         # From Gomez-Leyton & Velazquez 2014, J. Stat. Mech. 4, 6
         # [their gamma relates to our n as g = n-1]
 
-        if (self.n>1):
-            DF[c] *= gammainc(self.n-1,-E[c])
+        if (self.g>0):
+            DF[c] *= gammainc(self.g,-E[c])
     
         if (self.raj[j] < self.ramax):
             if (len(arg)==7): J2 = v2*r2 - (x*vx + y*vy + z*vz)**2
