@@ -2,7 +2,7 @@
 Description of the model
 ========================
 
-Lowered isothermal models (limepy)
+Lowered isothermal model exploration in Python (LIMEPY)
 ----------------------------------
 
 Isotropic models
@@ -34,19 +34,19 @@ Anisotropic models
 
 Radial anisotropy a la `Michie (1963)
 <http://adsabs.harvard.edu/abs/1963MNRAS.125..127M>`_ can be
-included
+included as follows
 
 .. math::
    f_g(E, J^2) = \exp(-J^2)f_g(E),
 
-where :math:`J^2 = (rv_t)^2/(2r_{\rm a}^2\sigma^2)`, here :math:`r_{\rm a}` is the anisotropy radius
+where :math:`J^2 = (rv_t)^2/(2r_{\rm a}^2\sigma^2)`, here :math:`r_{\rm a}` is the user-defined anisotropy radius.
 
 Multi-mass model
 ^^^^^^^^^^^^^^^^
 
 Multi-mass models are found by summing the DFs of individual mass
-components and adopting for each component following `Gunn &
-Griffin (1979) <http://adsabs.harvard.edu/abs/1979AJ.....84..752G>`_
+components and adopting for each component (following `Gunn &
+Griffin (1979) <http://adsabs.harvard.edu/abs/1979AJ.....84..752G>`_)
 
 .. math::
    \sigma_j       &\propto  \mu_j^{-\delta}\\

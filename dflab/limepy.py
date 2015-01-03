@@ -154,8 +154,7 @@ class limepy:
 
     def _logcheck(self, t, y):
         """ Logs steps and checks for final values """
-        if (t>0):
-            self.r, self.y = numpy.r_[self.r, t], numpy.c_[self.y, y]
+        if (t>0): self.r, self.y = numpy.r_[self.r, t], numpy.c_[self.y, y]
         self.nstep+=1
         return 0 if (y[0]>1e-6) else -1
 
@@ -328,11 +327,8 @@ class limepy:
         if (self.ra < self.ramax)&(phi>0)&(r>0):
             p = r/ra
             p2 = p**2
-
             g = self.g
-
-            g3, g5, g7 = g+1.5, g+2.5, g+3.5
-            fp2 = phi*p2
+            g3, g5, g7, fp2 = g+1.5, g+2.5, g+3.5, phi*p2
             P2 = 1 - hyp1f1(1, g3, -fp2)
             if fp2 < 1e-2: P2 = fp2/g3 - fp2**2/(g3*g5) + fp2**3/(g3*g5*g7)
             if fp2 > 500: P2 = 1 - (g3-1)/fp2 
@@ -344,7 +340,6 @@ class limepy:
         v2, v2r, v2t = numpy.zeros(r.size), numpy.zeros(r.size), numpy.zeros(r.size)
         for i in range(r.size-1):
             v2[i], v2r[i], v2t[i] = self._rhov2func(phi[i], r[i], ra)/rho[i]
-
         return v2, v2r, v2t
 
     def _rhov2func(self, phi, r, ra):
@@ -361,10 +356,8 @@ class limepy:
             p2 = p**2
             p12 = 1+p2
 
-            g3, g5, g7 = g + 1.5, g + 2.5, g + 3.5
+            g3, g5, g7, fp2 = g + 1.5, g + 2.5, g + 3.5, phi*p2
             G3 = gamma(g3)
-            fp2 = phi*p2
-
             P1 = phi**g3/G3/p12
             P2 = (1 - hyp1f1(1, g3, -fp2) )/fp2
 
@@ -383,7 +376,6 @@ class limepy:
             P5 = (3+p2)/p12
             rhov2 *= P5/p12
             rhov2 += P1*(P5/g3 + (p2-1)/p12*P2 + 2*P3 - 2*P4)
-
         else:
             rhov2 *= 3
             rhov2t *= 2
@@ -415,6 +407,9 @@ class limepy:
             for j in range(self.nmbin):
                 rhov2j = self._rhov2func(y[0]/self.sig2[j], x, self.raj[j])[0]
                 derivs.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rhov2j)
+#            for j in range(self.nmbin):
+#                rhov2rj = self._rhov2func(y[0]/self.sig2[j], x, self.raj[j])[0]
+#                derivs.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rhov2rj)
         return derivs
 
     def _setup_phi_interpolator(self):
@@ -423,7 +418,6 @@ class limepy:
         self._interpolator_set = True
         phi_and_derivs = numpy.vstack([[self.phi],[self.dp1]]).T
         self._phi_poly =PiecewisePolynomial(self.r,phi_and_derivs,direction=1)
-
 
     def _scale(self):
         """
@@ -439,9 +433,9 @@ class limepy:
         self.G *= Gstar
         self.rs = Rstar
         self.sig2 *= v2star
-        self.ra *= Rstar
-        self.raj *= Rstar
-        self.ramax *= Rstar
+
+        # Anisotropy radii
+        self.ra, self.raj, self.ramax = (q*Rstar for q in [self.ra,self.raj,self.ramax])
 
         # Scale all variable needed when run with potonly=True
         self.r, self.r0, self.rt = (q*Rstar for q in [self.r,self.r0,self.rt])
@@ -524,21 +518,19 @@ class limepy:
             r, v = sqrt(r2), sqrt(v2)
 
         phi = self.interp_phi(r)
-        vesc2 = 2.0*phi                            # Note: phi > 0
+        vesc2 = 2.0*phi                        # Note: phi > 0
 
         DF = numpy.zeros([max(r.size, v.size)])
         c = (r<self.rt)&(v2<vesc2)
 
-        E = (0.5*v2 - phi)/self.sig2[j]            # Dimensionless energy
-        DF[c] = exp(-E[c])
+        E = (phi-0.5*v2)/self.sig2[j]          # Dimensionless positive energy
+        DF[c] = exp(E[c])
 
-        # Continous truncation parameter 
-        # From Gomez-Leyton & Velazquez 2014, J. Stat. Mech. 4, 6
-        # [their gamma relates to our n as g = n-1]
+        # Float truncation parameter 
+        # Following Gomez-Leyton & Velazquez 2014, J. Stat. Mech. 4, 6
 
-        if (self.g>0):
-            DF[c] *= gammainc(self.g,-E[c])
-    
+        if (self.g>0): DF[c] *= gammainc(self.g, E[c])
+
         if (self.raj[j] < self.ramax):
             if (len(arg)==7): J2 = v2*r2 - (x*vx + y*vy + z*vz)**2
             if (len(arg)==4): J2 = sin(theta)**2*v2*r2
@@ -551,3 +543,4 @@ class limepy:
 
 
 
+a = limepy(7,1,ra=1)
