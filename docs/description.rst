@@ -2,8 +2,10 @@
 Description of the model
 ========================
 
-Lowered isothermal model exploration in Python (LIMEPY)
-----------------------------------
+
+
+(MM, A)limepy: (Multi-Mass, Anisotropic) Lowered Isothermal Model Explorer in Python 
+-------------------------------------------------------------------------------------
 
 Isotropic models
 ^^^^^^^^^^^^^^^^

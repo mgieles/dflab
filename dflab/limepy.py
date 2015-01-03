@@ -18,7 +18,6 @@ class limepy:
 
         (Multi-Mass, Anisotropic) Lowered Isothermal Model Explorer in Python
 
-        Class to generate solutions to lowered isothermal models.
 
         Parameters:
 
@@ -120,7 +119,7 @@ class limepy:
 
         self.MS, self.RS, self.GS = 1e5, 3, 0.004302
         self.scale_radius = 'rh'
-        self.scale=False
+        self.scale = False
         self.max_step = 1e4
         self.diffcrit = 1e-10
 
@@ -467,7 +466,7 @@ class limepy:
                                               [self.v2j, self.v2rj,self.v2tj])
                 self.kj,self.Kj=(q*Mstar*v2star for q in [self.kj, self.Kj])
 
-    def tonp(self, q):
+    def _tonp(self, q):
         q = numpy.array([q]) if not hasattr(q,"__len__") else numpy.array(q)
         return q
 
@@ -497,21 +496,21 @@ class limepy:
             raise ValueError("Error: df needs 2, 3, 4 or 7 arguments")
 
         if len(arg) == 2:
-            r, v = (self.tonp(q) for q in arg)
+            r, v = (self._tonp(q) for q in arg)
             j = 0
 
         if len(arg) == 3:
-            r, v = (self.tonp(q) for q in arg[:-1])
+            r, v = (self._tonp(q) for q in arg[:-1])
             j = arg[-1]
 
         if len(arg) == 4:
-            r, v, theta = (self.tonp(q) for q in arg[:-1])
+            r, v, theta = (self._tonp(q) for q in arg[:-1])
             j = arg[-1]
 
         if len(arg) < 7: r2, v2 = r**2, v**2
 
         if len(arg) == 7:
-            x, y, z, vx, vy, vz = (self.tonp(q) for q in arg[:-1])
+            x, y, z, vx, vy, vz = (self._tonp(q) for q in arg[:-1])
             j = arg[-1]
             r2 = x**2 + y**2 + z**2
             v2 = vx**2 + vy**2 + vz**2
@@ -543,4 +542,4 @@ class limepy:
 
 
 
-a = limepy(7,1,ra=1)
+
