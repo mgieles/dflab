@@ -205,7 +205,7 @@ class limepy:
         # Initialize
         self.r = numpy.array([0])
         self.y = numpy.r_[self.W0, numpy.zeros(self.nmbin+1)]
-        if (not potonly): self.y = numpy.r_[self.y, numpy.zeros(self.nmbin)]
+        if (not potonly): self.y = numpy.r_[self.y, numpy.zeros(2*self.nmbin)]
 
         # Ode solving
         max_step = 1e4 if (potonly) else self.max_step
@@ -255,6 +255,7 @@ class limepy:
         # Additional stuff
         if (not potonly):
             self.K = numpy.sum(sol.y[2+self.nmbin:2+2*self.nmbin])
+            self.Kr = numpy.sum(sol.y[2+2*self.nmbin:2+3*self.nmbin])
 
             if (not self.multi):
                 self.rho = self._rho(self.phi, self.r, self.ra)
@@ -269,7 +270,8 @@ class limepy:
                     v2j, v2rj, v2tj = (q*self.sig2[j] for q in [v2j,v2rj,v2tj])
                     betaj = self._beta(self.r, v2rj, v2tj)
 
-                    kj = self.y[2+self.nmbin,:]
+                    kj = self.y[2+self.nmbin+j,:]
+                    krj = self.y[2+2*self.nmbin+j,:]
 
                     mcj = -numpy.r_[self.y[1+j,:], self.y[1+j,-1]]/self.G
                     rhj = numpy.interp(0.5*mcj[-1], mcj, self.r)
@@ -282,7 +284,8 @@ class limepy:
                         self.v2r = self._Mjtot[j]*v2rj/self.M
                         self.v2t = self._Mjtot[j]*v2tj/self.M
 
-                        self.betaj, self.kj, self.Kj = betaj, kj, kj[-1]
+                        self.betaj = betaj
+                        self.kj, self.krj, self.Kj, self.Krj = kj, krj, kj[-1], krj[-1]
                         self.rhj, self.mcj = rhj, mcj
                     else:
                         self.rhoj = numpy.vstack((self.rhoj, self._ah[j]*rhoj))
@@ -297,7 +300,9 @@ class limepy:
 
                         self.betaj = numpy.vstack((self.betaj, betaj))
                         self.kj = numpy.vstack((self.kj, kj))
+                        self.krj = numpy.vstack((self.krj, krj))
                         self.Kj = numpy.r_[self.Kj, kj[-1]]
+                        self.Krj = numpy.r_[self.Krj, krj[-1]]
                         self.rhj = numpy.r_[self.rhj,rhj]
                         self.mcj = numpy.vstack((self.mcj, mcj))
             self.beta = self._beta(self.r, self.v2r, self.v2t)
@@ -406,9 +411,9 @@ class limepy:
             for j in range(self.nmbin):
                 rhov2j = self._rhov2func(y[0]/self.sig2[j], x, self.raj[j])[0]
                 derivs.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rhov2j)
-#            for j in range(self.nmbin):
-#                rhov2rj = self._rhov2func(y[0]/self.sig2[j], x, self.raj[j])[0]
-#                derivs.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rhov2rj)
+            for j in range(self.nmbin):
+                rhov2rj = self._rhov2func(y[0]/self.sig2[j], x, self.raj[j])[1]
+                derivs.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rhov2rj)
         return derivs
 
     def _setup_phi_interpolator(self):
@@ -457,6 +462,7 @@ class limepy:
             self.v2, self.v2r, self.v2t = (q*v2star for q in [self.v2,
                                                           self.v2r,self.v2t])
             self.K *= Mstar*v2star
+            self.Kr *= Mstar*v2star
 
             if (self.multi):
                 self.rhoj *= Mstar/Rstar**3
@@ -464,7 +470,7 @@ class limepy:
                 self.rhj *= Rstar
                 self.v2j,self.v2rj,self.v2tj=(q*v2star for q in
                                               [self.v2j, self.v2rj,self.v2tj])
-                self.kj,self.Kj=(q*Mstar*v2star for q in [self.kj, self.Kj])
+                self.kj,self.Krj,self.Kj=(q*Mstar*v2star for q in [self.kj, self.Krj, self.Kj])
 
     def _tonp(self, q):
         q = numpy.array([q]) if not hasattr(q,"__len__") else numpy.array(q)
@@ -541,5 +547,6 @@ class limepy:
         return DF
 
 
+#a = limepy(7,1,ra=0.44)
 
-
+#print a.Kr/a.K

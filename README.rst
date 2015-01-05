@@ -22,8 +22,8 @@ models (limepy)
 Features
 --------
 
-* Poisson solver for float truncation parameter g, with option to include (radial) anisotropy and multi-mass models
 * Normalised DF values
-* Compute projected properties of the models (TBD)
-* Initial conditions generation (TBD)
+* Density and velocity moments
+* Projected properties of the models (TBD)
+* Initial conditions generator (TBD)
 
