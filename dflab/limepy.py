@@ -107,8 +107,8 @@ class limepy:
             if (self.potonly):
                 print " M = %10.3f; U = %10.4f "%(self.M, self.U)
             else:
-                out1=(self.M,self.U,self.K,self.K/self.U)
-                print " M = %10.3e; U = %10.4e; K = %10.4e; Q = %6.4f"%out1
+                out1=(self.M,self.U,self.K,2*self.Kr/self.Kt,self.K/self.U)
+                print " M = %10.3e; U = %10.4e; K = %10.4e; 2Kr/Kt = %5.3f; Q = %6.4f"%out1
             out2=(self.rv/self.rh,self.rh/self.r0,self.rt/self.r0)
             print " rv/rh = %4.3f; rh/r0 = %6.3f; rt/r0 = %7.3f"%out2
 
@@ -256,6 +256,7 @@ class limepy:
         if (not potonly):
             self.K = numpy.sum(sol.y[2+self.nmbin:2+2*self.nmbin])
             self.Kr = numpy.sum(sol.y[2+2*self.nmbin:2+3*self.nmbin])
+            self.Kt = self.K - self.Kr
 
             if (not self.multi):
                 self.rho = self._rho(self.phi, self.r, self.ra)
@@ -408,12 +409,17 @@ class limepy:
         derivs.append(dUdx)
 
         if (not potonly): #dK_j/dx
+            rhov2j, rhov2rj = [], []
             for j in range(self.nmbin):
-                rhov2j = self._rhov2func(y[0]/self.sig2[j], x, self.raj[j])[0]
-                derivs.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rhov2j)
+                rv2, rv2r, rv2t = self._rhov2func(y[0]/self.sig2[j], x, self.raj[j])
+                rhov2j.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rv2)
+                rhov2rj.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rv2r)
+
             for j in range(self.nmbin):
-                rhov2rj = self._rhov2func(y[0]/self.sig2[j], x, self.raj[j])[1]
-                derivs.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rhov2rj)
+                derivs.append(rhov2j[j])
+            for j in range(self.nmbin):
+                derivs.append(rhov2rj[j])
+
         return derivs
 
     def _setup_phi_interpolator(self):
@@ -461,8 +467,7 @@ class limepy:
             self.rho *= Mstar/Rstar**3
             self.v2, self.v2r, self.v2t = (q*v2star for q in [self.v2,
                                                           self.v2r,self.v2t])
-            self.K *= Mstar*v2star
-            self.Kr *= Mstar*v2star
+            self.K,self.Kr,self.Kt=(q*Mstar*v2star for q in [self.K, self.Kr, self.Kt])
 
             if (self.multi):
                 self.rhoj *= Mstar/Rstar**3
@@ -547,6 +552,4 @@ class limepy:
         return DF
 
 
-#a = limepy(7,1,ra=0.44)
 
-#print a.Kr/a.K
