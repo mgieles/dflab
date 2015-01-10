@@ -14,6 +14,7 @@ class limepy:
     def __init__(self, W0, g, **kwargs):
         r"""
 
+
         (MM, A)limepy
 
         (Multi-Mass, Anisotropic) Lowered Isothermal Model Explorer in Python
@@ -103,14 +104,15 @@ class limepy:
         if (self.verbose):
             print "\n Model properties: "
             print " ----------------- "
-            print " W0 = %5.2f; n = %1i"%(self.W0, self.g)
+            print " W0 = %5.2f; g = %4.2f"%(self.W0, self.g)
+            print " Converged = %s"%(self.converged)
             if (self.potonly):
                 print " M = %10.3f; U = %10.4f "%(self.M, self.U)
             else:
-                out1=(self.M,self.U,self.K,2*self.Kr/self.Kt,self.K/self.U)
-                print " M = %10.3e; U = %10.4e; K = %10.4e; 2Kr/Kt = %5.3f; Q = %6.4f"%out1
-            out2=(self.rv/self.rh,self.rh/self.r0,self.rt/self.r0)
-            print " rv/rh = %4.3f; rh/r0 = %6.3f; rt/r0 = %7.3f"%out2
+                out1=(self.M,self.U,self.K,-self.K/self.U,2*self.Kr/self.Kt)
+                print " M = %10.3e; U = %9.3e; K = %9.3e; Q = %6.4f; 2Kr/Kt = %5.3f"%out1
+            out2=(self.rv/self.rh,self.rh/self.r0,self.rt/self.r0,self.ra/self.rh)
+            print " rv/rh = %4.3f; rh/r0 = %6.3f; rt/r0 = %7.3f; ra/rh = %7.3f"%out2
 
     def _set_kwargs(self, W0, g, **kwargs):
         if (g<0): raise ValueError("Error: g must be larger or equal to 0")
@@ -333,12 +335,9 @@ class limepy:
             p = r/ra
             p2 = p**2
             g = self.g
-            g3, g5, g7, fp2 = g+1.5, g+2.5, g+3.5, phi*p2
-            P2 = 1 - hyp1f1(1, g3, -fp2)
-            if fp2 < 1e-2: P2 = fp2/g3 - fp2**2/(g3*g5) + fp2**3/(g3*g5*g7)
-            if fp2 > 500: P2 = 1 - (g3-1)/fp2 
-            rho += phi**(g+0.5)/gamma(g+1.5)*P2
-            rho /= (1+p**2)
+            g3, g5, fp2 = g+1.5, g+2.5, phi*p2
+            rho += p2*phi**(g+1.5)*hyp1f1(1, g5, -fp2)/gamma(g5)
+            rho /= (1+p2)
         return rho
 
     def _get_v2(self, phi, r, rho, ra):
@@ -348,42 +347,31 @@ class limepy:
         return v2, v2r, v2t
 
     def _rhov2func(self, phi, r, ra):
-        """ Product of density and mean square velocity """
+        """Compute product of density and mean square velocity """
 
         # Isotropic case first
         rhov2r = exp(phi)*gammainc(self.g + 2.5, phi)
-        rhov2  = rhov2r
-        rhov2t = rhov2r
+        rhov2  = 3*rhov2r
+        rhov2t = 2*rhov2r
 
-       # Add anisotropy
+        # Add anisotropy
         if (ra < self.ramax)&(r>0)&(phi>0):
             p, g = r/ra, self.g
             p2 = p**2
             p12 = 1+p2
+            g3, g5, g7, fp2 = g+1.5, g+2.5, g+3.5, phi*p2
 
-            g3, g5, g7, fp2 = g + 1.5, g + 2.5, g + 3.5, phi*p2
-            G3 = gamma(g3)
-            P1 = phi**g3/G3/p12
-            P2 = (1 - hyp1f1(1, g3, -fp2) )/fp2
+            P1 = p2*phi**g5/gamma(g7)
+            H1, H2 = hyp1f1(1, g7, -fp2), hyp1f1(2, g7, -fp2)
 
-            # Taylor series near 0 for small fp2, accurate to 1e-8
-            if fp2 < 1e-2: P2 = 1/g3 - fp2/(g3*g5) + fp2**2/(g3*g5*g7)
-            if fp2 > 500: P2 = 1/fp2 - (g3-1)/fp2**2
-
+            rhov2r += P1*H1
             rhov2r /= p12
-            rhov2r += P1*(1/g3 - P2)
 
-            P3 = fp2*hyp1f1(2, g7, -fp2)/(g3*g5)
-            P4 = hyp1f1(1, g5, -fp2)/g3
-            rhov2t *= 2/p12**2 
-            rhov2t += 2*P1*(1/g3/p12 + p2/p12*P2 + P3 - P4)
+            rhov2t /= p12
+            rhov2t += 2*P1*(H1/p12 + H2)
+            rhov2t /= p12
 
-            P5 = (3+p2)/p12
-            rhov2 *= P5/p12
-            rhov2 += P1*(P5/g3 + (p2-1)/p12*P2 + 2*P3 - 2*P4)
-        else:
-            rhov2 *= 3
-            rhov2t *= 2
+            rhov2 = rhov2r + rhov2t
         return rhov2, rhov2r, rhov2t
 
     def _beta(self, r, v2r, v2t):
@@ -482,7 +470,7 @@ class limepy:
         return q
 
     def interp_phi(self, r):
-        """ Interpolate potential at r, works on scalar and arrays """
+        """ Returns interpolated potential at r, works on scalar and arrays """
 
         if not hasattr(r,"__len__"): r = numpy.array([r])
         if (not self._interpolator_set): self._setup_phi_interpolator()
@@ -497,11 +485,13 @@ class limepy:
         """
         Returns the normalised DF, can only be called after Poisson solver
         Arguments can be:
-          - r, v, j                (isotropic models)
+          - r, v                   (isotropic single-mass models)
+          - r, v, j                (isotropic multi-mass models)
           - r, v, theta, j         (anisotropic models)
           - x, y, z, vx, vy, vz, j (all models)
         Here j specifies the mass bin, j=0 for single mass
-        Works with scalar and ndarray input
+        Works with scalar and array input
+
         """
         if (len(arg)<2)|(len(arg)==5)|(len(arg)==6)|(len(arg)>7):
             raise ValueError("Error: df needs 2, 3, 4 or 7 arguments")

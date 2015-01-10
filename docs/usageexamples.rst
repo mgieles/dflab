@@ -19,7 +19,7 @@ units: :math:`G=M=r_{\rm v}=1` and print the normalisation
 constant :math:`A` of the DF and the DF in the centre:
 
 >>> w = limepy(12, 2, scale=True, GS=1, MS=1, RS=1, scale_radius='rv')
->>> print w.A, w.df(0,0,0)
+>>> print w.A, w.df(0,0)
 
 Multi-mass King model in physical units with :math:`r_{\rm h}
 = 1\,{\rm pc}` and :math:`M = 10^5\,{\rm M_{\odot}}`
