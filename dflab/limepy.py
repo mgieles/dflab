@@ -122,7 +122,8 @@ class limepy:
         self.MS, self.RS, self.GS = 1e5, 3, 0.004302
         self.scale_radius = 'rh'
         self.scale = False
-        self.max_step = 1e4
+        self.maxr = 1e6
+        self.max_step = self.maxr
         self.diffcrit = 1e-10
 
         self.nmbin, self.delta, self.eta = 1, 0.5, 0.5
@@ -210,23 +211,24 @@ class limepy:
         if (not potonly): self.y = numpy.r_[self.y, numpy.zeros(2*self.nmbin)]
 
         # Ode solving
-        max_step = 1e4 if (potonly) else self.max_step
+        max_step = self.maxr if (potonly) else self.max_step
         sol = ode(self._odes)
         sol.set_integrator('dopri5',nsteps=1e6,max_step=max_step,atol=1e-8)
         sol.set_solout(self._logcheck)
         sol.set_f_params(potonly)
         sol.set_initial_value(self.y,0)
-        sol.integrate(1e4)
+        sol.integrate(self.maxr)
+
 
         # Extrapolate to r_t: phi(r) =~ a(r_t -r), a = GM/r_t^2
         p = 2*sol.y[0]*self.r[-1]/(self.G*-sol.y[1]/self.G)
-        if (p<0.5):
+        if (p<=0.5):
             rtfac = (1 - sqrt(1-2*p))/p
             self.rt = rtfac*self.r[-1] if (rtfac > 1) else self.r[-1]
         else:
             self.rt = self.r[-1]
 
-        if (self.rt < 1e4)&(sol.successful()):
+        if (self.rt < 1e6)&(sol.successful()):
             self.converged=True
         else:
             self.converged=False
@@ -280,8 +282,8 @@ class limepy:
                     rhj = numpy.interp(0.5*mcj[-1], mcj, self.r)
 
                     if (j==0):
-                        self.rhoj = rhoj
-                        self.rho = self._ah[j]*rhoj
+                        self.rhoj = self._ah[j]*rhoj
+                        self.rho = self.rhoj
                         self.v2j, self.v2rj, self.v2tj = v2j, v2rj, v2tj
                         self.v2 = self._Mjtot[j]*v2j/self.M
                         self.v2r = self._Mjtot[j]*v2rj/self.M
@@ -332,9 +334,8 @@ class limepy:
 
         # Add anisotropy
         if (self.ra < self.ramax)&(phi>0)&(r>0):
-            p = r/ra
+            p, g = r/ra, self.g
             p2 = p**2
-            g = self.g
             g3, g5, fp2 = g+1.5, g+2.5, phi*p2
             rho += p2*phi**(g+1.5)*hyp1f1(1, g5, -fp2)/gamma(g5)
             rho /= (1+p2)
