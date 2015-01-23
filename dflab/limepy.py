@@ -14,7 +14,6 @@ class limepy:
     def __init__(self, W0, g, **kwargs):
         r"""
 
-
         (MM, A)limepy
 
         (Multi-Mass, Anisotropic) Lowered Isothermal Model Explorer in Python
@@ -209,6 +208,7 @@ class limepy:
         self.r = numpy.array([0])
         self.y = numpy.r_[self.W0, numpy.zeros(self.nmbin+1)]
         if (not potonly): self.y = numpy.r_[self.y, numpy.zeros(2*self.nmbin)]
+        self.y = numpy.r_[self.y, 0]
 
         # Ode solving
         max_step = self.maxr if (potonly) else self.max_step
@@ -218,7 +218,6 @@ class limepy:
         sol.set_f_params(potonly)
         sol.set_initial_value(self.y,0)
         sol.integrate(self.maxr)
-
 
         # Extrapolate to r_t: phi(r) =~ a(r_t -r), a = GM/r_t^2
         p = 2*sol.y[0]*self.r[-1]/(self.G*-sol.y[1]/self.G)
@@ -232,6 +231,9 @@ class limepy:
             self.converged=True
         else:
             self.converged=False
+
+        dvol = (4./3*pi)**2*(self.rt**3 - self.r[-1]**3)*0.5*(2*self.y[0,-1])**1.5
+        self.volume = self.y[-1][-1]+dvol
 
         # Fill arrays needed if potonly=True
         self.r = numpy.r_[self.r, self.rt]
@@ -409,6 +411,9 @@ class limepy:
             for j in range(self.nmbin):
                 derivs.append(rhov2rj[j])
 
+        dVdvdr= (4*pi)**2*x**2 * (2*y[0])**1.5/3 if (x>0)&(y[0]>0) else 0
+        derivs.append(dVdvdr)
+
         return derivs
 
     def _setup_phi_interpolator(self):
@@ -446,6 +451,7 @@ class limepy:
         self.mc *= Mstar
         self.U *= Mstar*v2star
         self.A *= Mstar/(v2star**1.5*Rstar**3)
+        self.volume *= v2star**1.5*Rstar**3
 
         if (self.multi):
             self.Mj *= Mstar
