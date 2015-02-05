@@ -3,7 +3,7 @@ from __future__ import division, absolute_import
 
 import numpy
 from numpy import exp, sqrt, pi, sin
-from scipy.interpolate import PiecewisePolynomial
+from scipy.interpolate import PiecewisePolynomial, interp1d
 from scipy.special import gamma, gammainc, dawsn, hyp1f1 
 from scipy.integrate import ode, quad
 from math import factorial
@@ -256,7 +256,13 @@ class limepy:
 
         # Compute radii to be able to scale in case potonly=True
         self.U = self.y[1+self.nmbin,-1]  - 0.5*self.G*self.M**2/self.rt
-        self.rh = numpy.interp(0.5*self.mc[-1],self.mc,self.r)
+
+        ih = numpy.searchsorted(self.mc, 0.5*self.mc[-1])-1
+        drdm = 1./(4*pi*self.r[ih:ih+2]**2*self._rho(self.phi[ih:ih+2], self.r[ih:ih+2], self.ra))
+        rm_and_derivs = numpy.vstack([[self.r[ih:ih+2]],[drdm]]).T
+        rh_poly = PiecewisePolynomial(self.mc[ih:ih+2],rm_and_derivs,direction=1)
+        self.rh = rh_poly(0.5*self.mc[-1])
+        
         self.rv = -0.5*self.G*self.M**2/self.U
 
         # Additional stuff
@@ -422,7 +428,7 @@ class limepy:
         # Generate piecewise 3th order polynomials to connect phi, using phi'
         self._interpolator_set = True
         phi_and_derivs = numpy.vstack([[self.phi],[self.dp1]]).T
-        self._phi_poly =PiecewisePolynomial(self.r,phi_and_derivs,direction=1)
+        self._phi_poly = PiecewisePolynomial(self.r,phi_and_derivs,direction=1)
 
     def _scale(self):
         """
