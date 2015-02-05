@@ -257,12 +257,12 @@ class limepy:
         # Compute radii to be able to scale in case potonly=True
         self.U = self.y[1+self.nmbin,-1]  - 0.5*self.G*self.M**2/self.rt
 
+        # Get half-mass radius from cubic interpolation 
         ih = numpy.searchsorted(self.mc, 0.5*self.mc[-1])-1
         drdm = 1./(4*pi*self.r[ih:ih+2]**2*self._rho(self.phi[ih:ih+2], self.r[ih:ih+2], self.ra))
-        rm_and_derivs = numpy.vstack([[self.r[ih:ih+2]],[drdm]]).T
-        rh_poly = PiecewisePolynomial(self.mc[ih:ih+2],rm_and_derivs,direction=1)
-        self.rh = rh_poly(0.5*self.mc[-1])
-        
+        rmc_and_derivs = numpy.vstack([[self.r[ih:ih+2]],[drdm]]).T
+        self.rh = PiecewisePolynomial(self.mc[ih:ih+2], rmc_and_derivs,direction=1)(0.5*self.mc[-1])
+
         self.rv = -0.5*self.G*self.M**2/self.U
 
         # Additional stuff
