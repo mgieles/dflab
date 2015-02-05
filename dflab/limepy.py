@@ -554,7 +554,7 @@ class limepy:
 
         DF[c] *= self.A[j]
 
-        return DF, phi
+        return DF
 
 
 
