@@ -241,8 +241,9 @@ class limepy:
         self._Mjtot = -sol.y[1:1+self.nmbin]/self.G
 
         self.M = sum(self._Mjtot)
-        self.dp1 = numpy.r_[0, self.y[1,1:]/self.r[1:-1]**2,
-                            -self.G*self.M/self.rt**2]
+
+        dphidr = numpy.sum(self.y[1:1+self.nmbin,1:],axis=0)/self.r[1:-1]**2
+        self.dp1 = numpy.r_[0, dphidr, -self.G*self.M/self.rt**2]
 
         self.A = self._ah/(2*pi*self.sig2)**1.5
 
@@ -500,6 +501,7 @@ class limepy:
         Works with scalar and array input
 
         """
+
         if (len(arg)<2)|(len(arg)==5)|(len(arg)==6)|(len(arg)>7):
             raise ValueError("Error: df needs 2, 3, 4 or 7 arguments")
 
@@ -546,7 +548,7 @@ class limepy:
 
         DF[c] *= self.A[j]
 
-        return DF
+        return DF, phi
 
 
 
