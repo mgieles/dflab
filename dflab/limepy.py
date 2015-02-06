@@ -5,7 +5,7 @@ import numpy
 from numpy import exp, sqrt, pi, sin
 from scipy.interpolate import PiecewisePolynomial, interp1d
 from scipy.special import gamma, gammainc, dawsn, hyp1f1 
-from scipy.integrate import ode, quad
+from scipy.integrate import ode, quad, simps
 from math import factorial
 
 #     Authors: Mark Gieles, Alice Zocchi (Surrey 2014)
@@ -220,7 +220,9 @@ class limepy:
         sol.integrate(self.maxr)
 
         # Extrapolate to r_t: phi(r) =~ a(r_t -r), a = GM/r_t^2
-        p = 2*sol.y[0]*self.r[-1]/(self.G*-sol.y[1]/self.G)
+        GM = -self.G*sum(sol.y[1:1+self.nmbin])
+        p = 2*sol.y[0]*self.r[-1]/GM
+
         if (p<=0.5):
             rtfac = (1 - sqrt(1-2*p))/p
             self.rt = rtfac*self.r[-1] if (rtfac > 1) else self.r[-1]
