@@ -261,10 +261,12 @@ class limepy:
 
         # Get half-mass radius from cubic interpolation 
         ih = numpy.searchsorted(self.mc, 0.5*self.mc[-1])-1
-        drdm = 1./(4*pi*self.r[ih:ih+2]**2*self._rho(self.phi[ih:ih+2], self.r[ih:ih+2], self.ra))
+        rhotmp=numpy.zeros(2)
+        for j in range(self.nmbin):
+            rhotmp += self._ah[j]*self._rho(self.phi[ih:ih+2]/self.sig2[j], self.r[ih:ih+2], self.raj[j])
+        drdm = 1./(4*pi*self.r[ih:ih+2]**2*rhotmp)
         rmc_and_derivs = numpy.vstack([[self.r[ih:ih+2]],[drdm]]).T
         self.rh = PiecewisePolynomial(self.mc[ih:ih+2], rmc_and_derivs,direction=1)(0.5*self.mc[-1])
-
         self.rv = -0.5*self.G*self.M**2/self.U
 
         # Additional stuff
