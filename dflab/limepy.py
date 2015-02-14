@@ -135,7 +135,7 @@ class limepy:
         self.potonly, self.multi, self.verbose = [False]*3
         self.ra, self.ramax = 1e6, 100
 
-        self.nstep=0
+        self.nstep=1
         self.converged=False
         self._interpolator_set=False
 
@@ -260,6 +260,7 @@ class limepy:
         self.U = self.y[1+self.nmbin,-1]  - 0.5*self.G*self.M**2/self.rt
 
         # Get half-mass radius from cubic interpolation 
+
         ih = numpy.searchsorted(self.mc, 0.5*self.mc[-1])-1
         rhotmp=numpy.zeros(2)
         for j in range(self.nmbin):
@@ -267,6 +268,7 @@ class limepy:
         drdm = 1./(4*pi*self.r[ih:ih+2]**2*rhotmp)
         rmc_and_derivs = numpy.vstack([[self.r[ih:ih+2]],[drdm]]).T
         self.rh = PiecewisePolynomial(self.mc[ih:ih+2], rmc_and_derivs,direction=1)(0.5*self.mc[-1])
+
         self.rv = -0.5*self.G*self.M**2/self.U
 
         # Additional stuff
@@ -487,6 +489,28 @@ class limepy:
         q = numpy.array([q]) if not hasattr(q,"__len__") else numpy.array(q)
         return q
 
+    def project(self):
+        """ Compute projected mass density (Sigma) and projected <v2> profiles """
+
+        if (self.multi):
+            print " Projection of multi-mass system not yet implemented"
+            return
+
+        R = self.r
+        Sigma = numpy.zeros(self.nstep)
+        v2p = numpy.zeros(self.nstep)
+
+        for i in range(self.nstep-1):
+            c = (self.r >= R[i])
+            r = self.r[c]
+            z = sqrt(abs(r**2 - R[i]**2)) # avoid small neg. values due to round off
+
+            Sigma[i] = 2.0*simps(self.rho[c], x=z)
+            betaterm = 1 if i==0 else 1 - self.beta[c]*R[i]**2/self.r[c]**2
+            v2p[i] = abs(2.0*simps(betaterm*self.rho[c]*self.v2r[c], x=z)/Sigma[i])
+        self.R, self.Sigma, self.v2p = R, Sigma, v2p
+        return 
+            
     def interp_phi(self, r):
         """ Returns interpolated potential at r, works on scalar and arrays """
 
