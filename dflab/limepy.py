@@ -57,13 +57,13 @@ class limepy:
 
         >>> k = limepy(7, 0)
         >>> print k.rt/k.r0, k.rv/k.rh
-        >>> 19.1293450185 1.17562140501
+        >>> 19.1293485709 1.17783655227
         
-        Construct a Michie-King model and print r_a/r_h
+        Construct a Michie-King model and print r_a/r_h and 2*k.Kr/k.Kt
 
-        >>> a = limepy(7, 1, ra=2)
-        >>> print a.ra/a.rh
-        >>> 5.55543555675
+        >>> a = limepy(7, 1, ra=5)
+        >>> print a.ra/a.rh, 2*a.Kr/a.Kt
+        >>> 1.03378595801 1.36280947104
         
         Create a Wilson model with W_0 = 12 in Henon/N-body units: G = M = 
         r_v = 1 and print the normalisation constant A of the DF and the 
@@ -71,18 +71,19 @@ class limepy:
         
         >>> w = limepy(12, 2, scale=True, GS=1, MS=1, RS=1, scale_radius='rv')
         >>> print w.A, w.df(0,0)
-        >>> [ 0.00800902] [ 1303.40165523]
+        >>> [ 0.00800902] [ 1303.40245567]
 
         Multi-mass model in physical units with r_h = 1 pc and M = 10^5 M_sun
         and print central densities of each bin over the total central density
 
         >>> m = limepy(7, 1, mj=[0.3,1,5], Mj=[9,3,1], scale=True, MS=1e5,RS=1)
         >>> print m.alpha
-        >>> array([ 0.3072483 ,  0.14100799,  0.55174371])
+        >>> array([ 0.3072483 ,  0.14100798,  0.55174372])
 
         """
 
         self._set_kwargs(W0, g, **kwargs)
+        self.rhoint0 = self._rhoint(self.W0, 0, self.ramax)
 
         if (self.multi):
             self._init_multi(self.mj, self.Mj)
@@ -92,8 +93,7 @@ class limepy:
                 if self.niter > 100:
                     self.converged=False
 
-        self.r0 = 3./sqrt(self._rho(self.W0, 0, self.ramax))[0]
-
+        self.r0 = 1.0 
         if (self.multi): self.r0j = sqrt(self.sig2)*self.r0
 
         self._poisson(self.potonly)
@@ -127,13 +127,13 @@ class limepy:
 
         self.nmbin, self.delta, self.eta = 1, 0.5, 0.5
 
-        self.G = 1.0/(4.0*pi)
+        self.G = 9.0/(4.0*pi)
         self.mu, self._ah = numpy.array([1.0]), numpy.array([1.0])
         self.sig2 = numpy.array([1.0])
         self.niter = 0
 
         self.potonly, self.multi, self.verbose = [False]*3
-        self.ra, self.ramax = 1e6, 100
+        self.ra, self.ramax = 1e6, 1e3
 
         self.nstep=1
         self.converged=False
@@ -166,8 +166,9 @@ class limepy:
         self.raj = self.ra*self.mu**self.eta
 
         self.W0j = self.W0/self.sig2
-        self._ah = self.alpha*self._rho(self.W0,0,self.ramax)
-        self._ah /= self._rho(self.W0j,0,self.ramax)
+        self._ah = self.alpha*self._rhohat(self.W0,0,self.ramax)
+        self._ah /= self._rhohat(self.W0j,0,self.ramax)
+
 
     def _init_multi(self, mj, Mj):
         """ Initialise parameters and arrays for multi-mass system"""
@@ -247,7 +248,7 @@ class limepy:
         dphidr = numpy.sum(self.y[1:1+self.nmbin,1:],axis=0)/self.r[1:-1]**2
         self.dp1 = numpy.r_[0, dphidr, -self.G*self.M/self.rt**2]
 
-        self.A = self._ah/(2*pi*self.sig2)**1.5
+        self.A = self._ah/(2*pi*self.sig2)**1.5/self.rhoint0
 
         if (not self.multi):
             self.mc = -numpy.r_[self.y[1,:],self.y[1,-1]]/self.G
@@ -264,7 +265,7 @@ class limepy:
         ih = numpy.searchsorted(self.mc, 0.5*self.mc[-1])-1
         rhotmp=numpy.zeros(2)
         for j in range(self.nmbin):
-            rhotmp += self._ah[j]*self._rho(self.phi[ih:ih+2]/self.sig2[j], self.r[ih:ih+2], self.raj[j])
+            rhotmp += self._ah[j]*self._rhohat(self.phi[ih:ih+2]/self.sig2[j], self.r[ih:ih+2], self.raj[j])
         drdm = 1./(4*pi*self.r[ih:ih+2]**2*rhotmp)
         rmc_and_derivs = numpy.vstack([[self.r[ih:ih+2]],[drdm]]).T
         self.rh = PiecewisePolynomial(self.mc[ih:ih+2], rmc_and_derivs,direction=1)(0.5*self.mc[-1])
@@ -278,14 +279,14 @@ class limepy:
             self.Kt = self.K - self.Kr
 
             if (not self.multi):
-                self.rho = self._rho(self.phi, self.r, self.ra)
+                self.rho = self._rhohat(self.phi, self.r, self.ra)
                 self.v2, self.v2r, self.v2t = \
                         self._get_v2(self.phi, self.r, self.rho, self.ra)
 
             if (self.multi):
                 for j in range(self.nmbin):
                     phi, ra = self.phi/self.sig2[j], self.raj[j]
-                    rhoj = self._rho(phi, self.r, ra)
+                    rhoj = self._rhohat(phi, self.r, ra)
                     v2j, v2rj, v2tj = self._get_v2(phi, self.r, rhoj, ra)
                     v2j, v2rj, v2tj = (q*self.sig2[j] for q in [v2j,v2rj,v2tj])
                     betaj = self._beta(self.r, v2rj, v2tj)
@@ -328,8 +329,8 @@ class limepy:
             self.beta = self._beta(self.r, self.v2r, self.v2t)
 
 
-    def _rho(self, phi, r, ra):
-        """ Wrapper for _rhofunc when either phi or r, or both, are arrays """
+    def _rhohat(self, phi, r, ra):
+        """ Wrapper for _rhoint when either phi or r, or both, are arrays """
         if not hasattr(phi,"__len__"): phi = numpy.array([phi])
         if not hasattr(r,"__len__"): r = numpy.array([r])
 
@@ -338,11 +339,11 @@ class limepy:
 
         for i in range(n):
             if (phi.size==n)&(r.size==n):
-                rho[i] = self._rhofunc(phi[i], r[i], ra)
-            if (phi.size==n)&(r.size==1): rho[i] = self._rhofunc(phi[i], r, ra)
+                rho[i] = self._rhoint(phi[i], r[i], ra)/self.rhoint0
+            if (phi.size==n)&(r.size==1): rho[i] = self._rhoint(phi[i], r, ra)/self.rhoint0
         return rho
 
-    def _rhofunc(self, phi, r, ra):
+    def _rhoint(self, phi, r, ra):
         """ Dimensionless density as a function of phi and r (scalars only) """
         # Isotropic case first
         rho = exp(phi)*gammainc(self.g + 1.5, phi)
@@ -359,10 +360,10 @@ class limepy:
     def _get_v2(self, phi, r, rho, ra):
         v2, v2r, v2t = numpy.zeros(r.size), numpy.zeros(r.size), numpy.zeros(r.size)
         for i in range(r.size-1):
-            v2[i], v2r[i], v2t[i] = self._rhov2func(phi[i], r[i], ra)/rho[i]
+            v2[i], v2r[i], v2t[i] = self._rhov2int(phi[i], r[i], ra)/rho[i]/self.rhoint0
         return v2, v2r, v2t
 
-    def _rhov2func(self, phi, r, ra):
+    def _rhov2int(self, phi, r, ra):
         """Compute product of density and mean square velocity """
 
         # Isotropic case first
@@ -404,27 +405,28 @@ class limepy:
             derivs = [numpy.sum(y[1:1+self.nmbin])/x**2] if (x>0) else [0]
             for j in range(self.nmbin):
                 phi, ra = y[0]/self.sig2[j], self.raj[j]
-                derivs.append(-x**2*self._ah[j]*self._rhofunc(phi, x, ra))
-            dUdx  = 2.0*pi*numpy.sum(derivs[1:1+self.nmbin])*y[0]
+                derivs.append(-9.0*x**2*self._ah[j]*self._rhohat(phi, x, ra))
+            dUdx  = 2.0*pi*numpy.sum(derivs[1:1+self.nmbin])*y[0]/9.
         else:
             derivs = [y[1]/x**2] if (x>0) else [0]
-            derivs.append(-x**2*self._rhofunc(y[0], x, self.ra))
-            dUdx  = 2.0*pi*derivs[1]*y[0]
+            derivs.append(-9.0*x**2*self._rhohat(y[0], x, self.ra))
+            dUdx  = 2.0*pi*derivs[1]*y[0]/9.
         derivs.append(dUdx)
 
         if (not potonly): #dK_j/dx
             rhov2j, rhov2rj = [], []
             for j in range(self.nmbin):
-                rv2, rv2r, rv2t = self._rhov2func(y[0]/self.sig2[j], x, self.raj[j])
-                rhov2j.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rv2)
-                rhov2rj.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rv2r)
+                rv2, rv2r, rv2t = self._rhov2int(y[0]/self.sig2[j], x, self.raj[j])
+                rhov2j.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rv2/self.rhoint0)
+                rhov2rj.append(self._ah[j]*self.sig2[j]*2*pi*x**2*rv2r/self.rhoint0)
 
             for j in range(self.nmbin):
                 derivs.append(rhov2j[j])
+
             for j in range(self.nmbin):
                 derivs.append(rhov2rj[j])
 
-        dVdvdr= (4*pi)**2*x**2 * (2*y[0])**1.5/3 if (x>0)&(y[0]>0) else 0
+        dVdvdr = (4*pi)**2*x**2 * (2*y[0])**1.5/3 if (x>0)&(y[0]>0) else 0
         derivs.append(dVdvdr)
 
         return derivs
