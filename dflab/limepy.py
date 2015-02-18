@@ -293,6 +293,7 @@ class limepy:
 
                     kj = self.y[2+self.nmbin+j,:]
                     krj = self.y[2+2*self.nmbin+j,:]
+                    ktj = kj - krj
 
                     mcj = -numpy.r_[self.y[1+j,:], self.y[1+j,-1]]/self.G
                     rhj = numpy.interp(0.5*mcj[-1], mcj, self.r)
@@ -306,7 +307,9 @@ class limepy:
                         self.v2t = self._Mjtot[j]*v2tj/self.M
 
                         self.betaj = betaj
-                        self.kj, self.krj, self.Kj, self.Krj = kj, krj, kj[-1], krj[-1]
+                        self.kj, self.krj, self.ktj, self.Kj, self.Krj = kj, krj, ktj, kj[-1], krj[-1]
+                        self.ktj = self.kj - self.krj
+                        self.Ktj = self.Kj - self.Krj
                         self.rhj, self.mcj = rhj, mcj
                     else:
                         self.rhoj = numpy.vstack((self.rhoj, self._ah[j]*rhoj))
@@ -322,8 +325,10 @@ class limepy:
                         self.betaj = numpy.vstack((self.betaj, betaj))
                         self.kj = numpy.vstack((self.kj, kj))
                         self.krj = numpy.vstack((self.krj, krj))
+                        self.ktj = numpy.vstack((self.ktj, ktj))
                         self.Kj = numpy.r_[self.Kj, kj[-1]]
                         self.Krj = numpy.r_[self.Krj, krj[-1]]
+                        self.Ktj = numpy.r_[self.Ktj, ktj[-1]]
                         self.rhj = numpy.r_[self.rhj,rhj]
                         self.mcj = numpy.vstack((self.mcj, mcj))
             self.beta = self._beta(self.r, self.v2r, self.v2t)
@@ -485,7 +490,7 @@ class limepy:
                 self.rhj *= Rstar
                 self.v2j,self.v2rj,self.v2tj=(q*v2star for q in
                                               [self.v2j, self.v2rj,self.v2tj])
-                self.kj,self.Krj,self.Kj=(q*Mstar*v2star for q in [self.kj, self.Krj, self.Kj])
+                self.kj,self.Krj,self.Ktj,self.Kj=(q*Mstar*v2star for q in [self.kj, self.Krj, self.Ktj, self.Kj])
 
     def _tonp(self, q):
         q = numpy.array([q]) if not hasattr(q,"__len__") else numpy.array(q)
