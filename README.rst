@@ -11,6 +11,9 @@ dflab
 .. .. image:: https://pypip.in/d/dflab/badge.png
 ..         :target: https://pypi.python.org/pypi/dflab
 
+THIS PACKAGE IS NOT MAINTAINED ANYMORE, THE UP TO DATE LIMEPY CODE CAN BE FOUND IN 
+
+HTTPS://GITHUB.COM/MGIELES/LIMEPY  
 
 Python environment for solving distribution function (DF) based
 models. Currently contains 1 class for solving lowered isothermal
